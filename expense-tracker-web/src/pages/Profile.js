@@ -1,6 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import ProfileCard from "../components/ProfileCard";
-import ProfileInfo from "../components/ProfileInfo";
+import ProfileDetails from "../components/ProfileDetails";
 
 function Profile(){
 
@@ -12,13 +12,15 @@ function Profile(){
 
       <div className="dashboard-main">
 
-        <h1>Profile</h1>
+        <div className="header-bar">
+          <h1>Profile</h1>
+        </div>
 
         <div className="profile-container">
 
           <ProfileCard/>
 
-          <ProfileInfo/>
+          <ProfileDetails/>
 
         </div>
 
@@ -27,6 +29,7 @@ function Profile(){
     </div>
 
   );
+
 }
 
 export default Profile;

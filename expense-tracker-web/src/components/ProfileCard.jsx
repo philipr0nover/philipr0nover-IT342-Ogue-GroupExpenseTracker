@@ -12,11 +12,16 @@ function ProfileCard(){
 
       <h2>{user}</h2>
 
-      <p>Member</p>
+      <p>Expense Tracker Member</p>
+
+      <button className="profile-edit-btn">
+        Edit Profile
+      </button>
 
     </div>
 
   );
+
 }
 
 export default ProfileCard;
