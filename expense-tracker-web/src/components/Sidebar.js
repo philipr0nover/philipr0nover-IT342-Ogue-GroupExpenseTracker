@@ -16,7 +16,7 @@ function Sidebar(){
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/profile">Profile</Link>
         <Link to="/groups">Groups</Link>
-        <Link to="#">Expenses</Link>
+        <Link to="/expenses">Expenses</Link>
 
 
       <br/>

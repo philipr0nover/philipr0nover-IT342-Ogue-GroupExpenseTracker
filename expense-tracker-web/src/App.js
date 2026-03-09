@@ -4,7 +4,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import Groups from "./pages/Groups";   // ← add this
+import Groups from "./pages/Groups";
+import Expenses from "./pages/Expenses";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -38,12 +39,21 @@ function App(){
           }
         />
 
-        {/* GROUPS PAGE */}
         <Route
           path="/groups"
           element={
             <ProtectedRoute>
               <Groups/>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* EXPENSES PAGE */}
+        <Route
+          path="/expenses"
+          element={
+            <ProtectedRoute>
+              <Expenses/>
             </ProtectedRoute>
           }
         />

@@ -1,3 +1,5 @@
+import ExpenseRow from "./ExpenseRow";
+
 function ExpenseTable(){
 
   return(
@@ -7,29 +9,20 @@ function ExpenseTable(){
       <table>
 
         <thead>
+
           <tr>
-            <th>Description</th>
+            <th>Title</th>
             <th>Amount</th>
-            <th>Group</th>
             <th>Date</th>
           </tr>
+
         </thead>
 
         <tbody>
 
-          <tr>
-            <td>Dinner</td>
-            <td>$25</td>
-            <td>Friends</td>
-            <td>Today</td>
-          </tr>
-
-          <tr>
-            <td>Taxi</td>
-            <td>$10</td>
-            <td>Roommates</td>
-            <td>Yesterday</td>
-          </tr>
+          <ExpenseRow title="Dinner" amount="$45" date="May 10"/>
+          <ExpenseRow title="Taxi" amount="$12" date="May 11"/>
+          <ExpenseRow title="Groceries" amount="$30" date="May 12"/>
 
         </tbody>
 
@@ -38,6 +31,7 @@ function ExpenseTable(){
     </div>
 
   );
+
 }
 
 export default ExpenseTable;
