@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
+import Groups from "./pages/Groups";   // ← add this
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -33,6 +34,16 @@ function App(){
           element={
             <ProtectedRoute>
               <Profile/>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* GROUPS PAGE */}
+        <Route
+          path="/groups"
+          element={
+            <ProtectedRoute>
+              <Groups/>
             </ProtectedRoute>
           }
         />

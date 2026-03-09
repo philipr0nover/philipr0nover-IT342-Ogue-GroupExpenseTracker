@@ -13,10 +13,11 @@ function Sidebar(){
 
       <h2>ExpenseTracker</h2>
 
-      <Link to="/dashboard">Dashboard</Link>
-      <Link to="/profile">Profile</Link>
-      <Link to="#">Groups</Link>
-      <Link to="#">Expenses</Link>
+        <Link to="/dashboard">Dashboard</Link>
+        <Link to="/profile">Profile</Link>
+        <Link to="/groups">Groups</Link>
+        <Link to="#">Expenses</Link>
+
 
       <br/>
 
