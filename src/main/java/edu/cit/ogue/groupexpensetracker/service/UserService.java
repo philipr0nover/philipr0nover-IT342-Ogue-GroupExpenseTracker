@@ -5,17 +5,17 @@ import edu.cit.ogue.groupexpensetracker.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuthService {
+public class UserService {
 
     private final UserRepository userRepository;
 
-    public AuthService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     public User register(User user) {
 
-        if (userRepository.existsByEmail(user.getEmail())) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
@@ -25,7 +25,7 @@ public class AuthService {
     public User login(String email, String password) {
 
         return userRepository.findByEmail(email)
-                .filter(u -> u.getPassword().equals(password))
+                .filter(user -> user.getPassword().equals(password))
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
     }
 }
