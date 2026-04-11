@@ -9,5 +9,4 @@ public class GroupexpensetrackerApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(GroupexpensetrackerApplication.class, args);
 	}
-
 }

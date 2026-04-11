@@ -1,30 +1,64 @@
+import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import HeaderBar from "../components/HeaderBar";
 import AddExpenseForm from "../components/AddExpenseForm";
 import ExpenseTable from "../components/ExpenseTable";
 
-function Expenses(){
+function Expenses() {
 
-  return(
+  const [refresh, setRefresh] = useState(false);
 
-    <div className="dashboard-container">
+  const handleRefresh = () => {
+    setRefresh(prev => !prev);
+  };
 
-      <Sidebar/>
+  return (
+    <div style={{ display: "flex" }}>
 
-      <div className="dashboard-main">
+      {/* Sidebar */}
+      <Sidebar />
 
-        <HeaderBar title="Expenses"/>
+      {/* Main Content */}
+      <div
+        style={{
+          flex: 1,
+          padding: "30px",
+          backgroundColor: "#f5f6fa",
+          minHeight: "100vh"
+        }}
+      >
 
-        <AddExpenseForm/>
+        <HeaderBar title="Expenses" />
 
-        <ExpenseTable/>
+        {/* Form Card */}
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "20px",
+            borderRadius: "10px",
+            marginBottom: "20px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+          }}
+        >
+          <AddExpenseForm onSuccess={handleRefresh} />
+        </div>
+
+        {/* Table Card */}
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "20px",
+            borderRadius: "10px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+          }}
+        >
+          <ExpenseTable refresh={refresh} />
+        </div>
 
       </div>
 
     </div>
-
   );
-
 }
 
 export default Expenses;
