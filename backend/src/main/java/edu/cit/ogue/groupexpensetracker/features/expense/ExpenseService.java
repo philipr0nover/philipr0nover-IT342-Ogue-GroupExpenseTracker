@@ -1,7 +1,5 @@
-package edu.cit.ogue.groupexpensetracker.service;
+package edu.cit.ogue.groupexpensetracker.features.expense;
 
-import edu.cit.ogue.groupexpensetracker.entity.Expense;
-import edu.cit.ogue.groupexpensetracker.repository.ExpenseRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

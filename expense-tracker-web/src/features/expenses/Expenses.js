@@ -1,8 +1,8 @@
 import { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import HeaderBar from "../components/HeaderBar";
-import AddExpenseForm from "../components/AddExpenseForm";
-import ExpenseTable from "../components/ExpenseTable";
+import Sidebar from "../../components/Sidebar";
+import HeaderBar from "../../components/HeaderBar";
+import AddExpenseForm from "./AddExpenseForm";
+import ExpenseTable from "./ExpenseTable";
 
 function Expenses() {
 

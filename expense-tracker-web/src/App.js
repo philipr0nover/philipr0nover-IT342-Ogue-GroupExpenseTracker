@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Login from "./features/auth/Login";
+import Register from "./features/auth/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Groups from "./pages/Groups";
-import Expenses from "./pages/Expenses";
+import Expenses from "./features/expenses/Expenses";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 

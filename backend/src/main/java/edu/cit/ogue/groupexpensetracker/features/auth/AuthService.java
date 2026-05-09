@@ -1,7 +1,5 @@
-package edu.cit.ogue.groupexpensetracker.service;
+package edu.cit.ogue.groupexpensetracker.features.auth;
 
-import edu.cit.ogue.groupexpensetracker.entity.User;
-import edu.cit.ogue.groupexpensetracker.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

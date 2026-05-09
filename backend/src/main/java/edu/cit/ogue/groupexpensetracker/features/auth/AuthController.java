@@ -1,7 +1,5 @@
-package edu.cit.ogue.groupexpensetracker.controller;
+package edu.cit.ogue.groupexpensetracker.features.auth;
 
-import edu.cit.ogue.groupexpensetracker.entity.User;
-import edu.cit.ogue.groupexpensetracker.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

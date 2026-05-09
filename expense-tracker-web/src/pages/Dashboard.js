@@ -1,7 +1,7 @@
 import Sidebar from "../components/Sidebar";
 import HeaderBar from "../components/HeaderBar";
 import StatCard from "../components/StatCard";
-import ExpenseTable from "../components/ExpenseTable";
+import ExpenseTable from "../features/expenses/ExpenseTable";
 import ActivityPanel from "../components/ActivityPanel";
 
 function Dashboard(){

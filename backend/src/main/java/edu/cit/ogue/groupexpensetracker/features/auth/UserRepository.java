@@ -1,6 +1,5 @@
-package edu.cit.ogue.groupexpensetracker.repository;
+package edu.cit.ogue.groupexpensetracker.features.auth;
 
-import edu.cit.ogue.groupexpensetracker.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package edu.cit.ogue.groupexpensetracker.entity;
+package edu.cit.ogue.groupexpensetracker.features.expense;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;

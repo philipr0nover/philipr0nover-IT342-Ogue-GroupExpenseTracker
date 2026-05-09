@@ -1,7 +1,5 @@
-package edu.cit.ogue.groupexpensetracker.controller;
+package edu.cit.ogue.groupexpensetracker.features.expense;
 
-import edu.cit.ogue.groupexpensetracker.entity.Expense;
-import edu.cit.ogue.groupexpensetracker.service.ExpenseService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
