@@ -1,4 +1,6 @@
 package edu.cit.ogue.groupexpensetracker.features.groups;
 
-public class GroupRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface GroupRepository extends JpaRepository<Group, Long> {
 }

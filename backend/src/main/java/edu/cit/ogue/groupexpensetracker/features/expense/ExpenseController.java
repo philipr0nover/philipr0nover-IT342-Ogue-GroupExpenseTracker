@@ -1,7 +1,6 @@
 package edu.cit.ogue.groupexpensetracker.features.expense;
 
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -15,15 +14,18 @@ public class ExpenseController {
         this.expenseService = expenseService;
     }
 
-    // ✅ ADD EXPENSE
+    @GetMapping
+    public List<Expense> getAllExpenses() {
+        return expenseService.getAllExpenses();
+    }
+
+    @GetMapping("/group/{groupId}")
+    public List<Expense> getByGroup(@PathVariable Long groupId) {
+        return expenseService.getByGroup(groupId);
+    }
+
     @PostMapping
     public Expense addExpense(@RequestBody Expense expense) {
         return expenseService.addExpense(expense);
-    }
-
-    // ✅ GET EXPENSES BY GROUP
-    @GetMapping("/{groupId}")
-    public List<Expense> getExpenses(@PathVariable Long groupId) {
-        return expenseService.getByGroup(groupId);
     }
 }

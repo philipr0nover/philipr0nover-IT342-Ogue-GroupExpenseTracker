@@ -4,7 +4,11 @@ import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import Groups from "./pages/Groups";
+
+// ✅ FIXED IMPORT
+import Groups from "./features/groups/Groups";
+import GroupDetails from "./features/groups/GroupDetails";
+
 import Expenses from "./features/expenses/Expenses";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -39,11 +43,22 @@ function App(){
           }
         />
 
+        {/* ✅ GROUPS PAGE */}
         <Route
           path="/groups"
           element={
             <ProtectedRoute>
               <Groups/>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🔥 NEW ROUTE (IMPORTANT) */}
+        <Route
+          path="/groups/:id"
+          element={
+            <ProtectedRoute>
+              <GroupDetails/>
             </ProtectedRoute>
           }
         />
