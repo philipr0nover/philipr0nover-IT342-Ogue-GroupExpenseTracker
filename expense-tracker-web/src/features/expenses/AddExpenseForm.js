@@ -14,27 +14,41 @@ export default function AddExpenseForm({ onSuccess }) {
       return;
     }
 
-    if (amount <= 0) {
+    if (parseFloat(amount) <= 0) {
       alert("Amount must be positive");
       return;
     }
 
     try {
+      // 🔥 SAFE PARSE (prevents crash if localStorage is broken)
+      const userData = localStorage.getItem("user");
+      if (!userData) {
+        alert("User not logged in");
+        return;
+      }
+
+      const user = JSON.parse(userData);
+
+      if (!user?.id) {
+        alert("Invalid user session");
+        return;
+      }
+
       await axios.post("http://localhost:8080/api/v1/expenses", {
         description: title,
         amount: parseFloat(amount),
-        groupId: 1,
-        paidBy: 1
+        groupId: 1, // keep for now
+        paidBy: user.id // ✅ correct
       });
 
-      alert("Expense added successfully");
-
+      // 🔥 reset BEFORE refresh (avoids UI glitch)
       setTitle("");
       setAmount("");
 
       if (onSuccess) onSuccess();
 
     } catch (err) {
+      console.error("Add expense error:", err); // 🔥 see real backend error
       alert("Failed to add expense");
     }
   };

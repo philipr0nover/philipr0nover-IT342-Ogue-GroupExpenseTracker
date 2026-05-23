@@ -12,8 +12,9 @@ public class ExpenseService {
         this.expenseRepository = expenseRepository;
     }
 
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+    // 🔥 SIMPLE + WORKING: USER-BASED (NO GROUP DEPENDENCY)
+    public List<Expense> getByUser(Long userId) {
+        return expenseRepository.findByPaidBy(userId);
     }
 
     public List<Expense> getByGroup(Long groupId) {

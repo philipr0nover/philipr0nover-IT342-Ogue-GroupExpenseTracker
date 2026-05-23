@@ -20,8 +20,12 @@ function Login() {
     e.preventDefault();
 
     try{
-      await loginUser(formData);
-      localStorage.setItem("user",formData.email);
+      // ✅ GET RESPONSE FROM BACKEND
+      const res = await loginUser(formData);
+
+      // 🔥 FIX: STORE FULL USER OBJECT (NOT JUST EMAIL)
+      localStorage.setItem("user", JSON.stringify(res.data));
+
       window.location.href="/dashboard";
     }catch{
       alert("Invalid login");

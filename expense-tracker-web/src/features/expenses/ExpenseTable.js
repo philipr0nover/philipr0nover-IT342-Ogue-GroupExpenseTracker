@@ -15,11 +15,22 @@ export default function ExpenseTable({ refresh }) {
         setLoading(true);
         setError(null);
 
-        const res = await axios.get("http://localhost:8080/api/v1/expenses");
+        // ✅ GET LOGGED-IN USER
+        const user = JSON.parse(localStorage.getItem("user"));
+
+        if (!user || !user.id) {
+          setError("User not found");
+          setLoading(false);
+          return;
+        }
+
+        // 🔥 USER-BASED FETCH
+        const res = await axios.get(
+          `http://localhost:8080/api/v1/expenses/user/${user.id}`
+        );
 
         if (!isMounted) return;
 
-        // ✅ CLEAN DATA
         const cleanData = (res.data || []).filter(
           (e) => e.description && e.description.trim() !== "" && e.amount
         );
@@ -44,12 +55,10 @@ export default function ExpenseTable({ refresh }) {
 
   }, [refresh]);
 
-  // ✅ LOADING STATE (no flicker)
   if (loading) {
     return <p style={{ padding: "20px" }}>Loading expenses...</p>;
   }
 
-  // ✅ ERROR STATE (no alert spam)
   if (error) {
     return (
       <p style={{ padding: "20px", color: "red" }}>

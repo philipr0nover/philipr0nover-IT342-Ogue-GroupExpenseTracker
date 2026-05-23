@@ -9,4 +9,5 @@ public interface GroupMemberRepository
     List<GroupMember> findByGroupId(Long groupId);
 
     boolean existsByGroupIdAndUserId(Long groupId, Long userId);
+    List<GroupMember> findByUserId(Long userId);
 }

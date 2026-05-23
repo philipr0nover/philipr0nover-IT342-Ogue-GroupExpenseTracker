@@ -14,14 +14,15 @@ public class ExpenseController {
         this.expenseService = expenseService;
     }
 
-    @GetMapping
-    public List<Expense> getAllExpenses() {
-        return expenseService.getAllExpenses();
-    }
-
     @GetMapping("/group/{groupId}")
     public List<Expense> getByGroup(@PathVariable Long groupId) {
         return expenseService.getByGroup(groupId);
+    }
+
+    // ✅ ADD THIS (user-based)
+    @GetMapping("/user/{userId}")
+    public List<Expense> getByUser(@PathVariable Long userId) {
+        return expenseService.getByUser(userId);
     }
 
     @PostMapping

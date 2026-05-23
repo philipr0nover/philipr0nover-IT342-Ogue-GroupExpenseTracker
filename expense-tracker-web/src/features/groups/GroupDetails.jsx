@@ -19,6 +19,9 @@ function GroupDetails(){
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
 
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [loadingExpenses, setLoadingExpenses] = useState(true);
+
   useEffect(() => {
     fetchMembers();
     fetchExpenses();
@@ -28,29 +31,33 @@ function GroupDetails(){
 
   const fetchMembers = async () => {
     try {
+      setLoadingMembers(true);
       const res = await getMembers(id);
-      setMembers(res.data || []);
+      setMembers(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Members error:", err);
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
     }
   };
 
   const searchUser = async () => {
-    if (!email) return;
+    if (!email.trim()) return;
 
     try {
       const res = await axios.get(
-        `http://localhost:8080/api/v1/auth/users/search?email=${email}`
+        `http://localhost:8080/api/v1/auth/users/search?email=${email.trim()}`
       );
-      setFoundUser(res.data);
+      setFoundUser(res.data || null);
     } catch (err) {
-      console.error("User not found");
+      console.error(err);
       setFoundUser(null);
     }
   };
 
   const handleAddMember = async () => {
-    if (!foundUser) return;
+    if (!foundUser || !foundUser.id) return;
 
     try {
       await addMember({
@@ -61,10 +68,12 @@ function GroupDetails(){
       setEmail("");
       setFoundUser(null);
       setShowModal(false);
+
       fetchMembers();
 
     } catch (err) {
       console.error("Add member failed:", err);
+      alert("Failed to add member");
     }
   };
 
@@ -72,30 +81,39 @@ function GroupDetails(){
 
   const fetchExpenses = async () => {
     try {
+      setLoadingExpenses(true);
       const res = await getExpensesByGroup(id);
-      setExpenses(res.data || []);
+      setExpenses(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Expenses error:", err);
+      setExpenses([]);
+    } finally {
+      setLoadingExpenses(false);
     }
   };
 
   const handleAddExpense = async () => {
-    if (!title || !amount) return;
+    if (!title.trim() || !amount) return;
 
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
+
       await addExpense({
-        description: title,
+        description: title.trim(),
         amount: Number(amount),
-        groupId: Number(id)
+        groupId: Number(id),
+        paidBy: user.id
       });
 
       setTitle("");
       setAmount("");
       setShowExpenseModal(false);
+
       fetchExpenses();
 
     } catch (err) {
       console.error("Add expense failed:", err);
+      alert("Failed to add expense");
     }
   };
 
@@ -125,7 +143,9 @@ function GroupDetails(){
         <div style={styles.card}>
           <h3>Members</h3>
 
-          {members.length === 0 ? (
+          {loadingMembers ? (
+            <p style={styles.empty}>Loading...</p>
+          ) : members.length === 0 ? (
             <p style={styles.empty}>No members yet</p>
           ) : (
             members.map(m => (
@@ -136,7 +156,7 @@ function GroupDetails(){
                 <span>
                   {m.user
                     ? `${m.user.firstname} ${m.user.lastname}`
-                    : `User ID: ${m.userId}`}
+                    : "Unknown User"}
                 </span>
               </div>
             ))
@@ -155,7 +175,9 @@ function GroupDetails(){
             </button>
           </div>
 
-          {expenses.length === 0 ? (
+          {loadingExpenses ? (
+            <p style={styles.empty}>Loading...</p>
+          ) : expenses.length === 0 ? (
             <p style={styles.empty}>No expenses yet</p>
           ) : (
             expenses.map(exp => (
@@ -170,7 +192,7 @@ function GroupDetails(){
                 </div>
 
                 <span style={styles.amount}>
-                  ₱{exp.amount}
+                  ₱{exp.amount || 0}
                 </span>
               </div>
             ))
@@ -179,7 +201,7 @@ function GroupDetails(){
 
       </div>
 
-      {/* ================= ADD MEMBER MODAL ================= */}
+      {/* ADD MEMBER MODAL */}
       {showModal && (
         <div style={styles.overlay}>
           <div style={styles.modal}>
@@ -198,9 +220,7 @@ function GroupDetails(){
 
             {foundUser && (
               <div style={{ marginTop: "10px" }}>
-                <p>
-                  {foundUser.firstname} {foundUser.lastname}
-                </p>
+                <p>{foundUser.firstname} {foundUser.lastname}</p>
 
                 <button
                   style={styles.searchBtn}
@@ -214,7 +234,7 @@ function GroupDetails(){
         </div>
       )}
 
-      {/* ================= ADD EXPENSE MODAL ================= */}
+      {/* ADD EXPENSE MODAL */}
       {showExpenseModal && (
         <div style={styles.overlay}>
           <div style={styles.modal}>
@@ -229,8 +249,8 @@ function GroupDetails(){
 
             <input
               style={styles.input}
-              placeholder="Amount"
               type="number"
+              placeholder="Amount"
               value={amount}
               onChange={(e)=>setAmount(e.target.value)}
             />
@@ -248,55 +268,45 @@ function GroupDetails(){
 
 export default GroupDetails;
 
-// ================= STYLES =================
-
 const styles = {
   wrapper: {
     padding: "30px",
-    background: "#f8faf9",
+    background: "#f5f6fa",
     minHeight: "100vh"
   },
-
   header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px"
+    alignItems: "center"
   },
-
-  title: { color: "#1e7f5c" },
-
+  title: { color: "#16a085" },
   backBtn: {
-    marginBottom: "10px",
     background: "none",
     border: "none",
-    color: "#1e7f5c",
+    color: "#16a085",
     cursor: "pointer",
-    fontWeight: "bold"
+    marginBottom: "10px"
   },
-
   addMainBtn: {
-    background: "#1e7f5c",
+    background: "#16a085",
     color: "#fff",
     border: "none",
-    padding: "10px 15px",
+    padding: "10px",
     borderRadius: "8px",
     cursor: "pointer"
   },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "20px"
+    gap: "20px",
+    marginTop: "20px"
   },
-
   card: {
-    background: "#ffffff",
+    background: "#fff",
     padding: "20px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.06)"
+    borderRadius: "10px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
   },
-
   memberCard: {
     display: "flex",
     alignItems: "center",
@@ -304,51 +314,34 @@ const styles = {
     padding: "10px 0",
     borderBottom: "1px solid #eee"
   },
-
-  expenseCard: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "12px 0",
-    borderBottom: "1px solid #eee"
-  },
-
-  expenseTitle: {
-    fontWeight: "600",
-    color: "#333"
-  },
-
-  expenseDate: {
-    fontSize: "12px",
-    color: "#888"
-  },
-
-  amount: {
-    fontWeight: "bold",
-    color: "#1e7f5c"
-  },
-
   avatar: {
     width: "35px",
     height: "35px",
     borderRadius: "50%",
-    background: "#1e7f5c",
+    background: "#16a085",
     color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center"
   },
-
+  expenseCard: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "10px 0",
+    borderBottom: "1px solid #eee"
+  },
+  expenseTitle: { fontWeight: "600" },
+  expenseDate: { fontSize: "12px", color: "#888" },
+  amount: { color: "#16a085", fontWeight: "bold" },
   addExpenseBtn: {
     background: "#27ae60",
     color: "#fff",
     border: "none",
-    padding: "6px 12px",
+    padding: "5px 10px",
     borderRadius: "6px",
     cursor: "pointer"
   },
-
   empty: { color: "#999" },
-
   overlay: {
     position: "fixed",
     top: 0,
@@ -357,27 +350,24 @@ const styles = {
     height: "100%",
     background: "rgba(0,0,0,0.4)",
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    alignItems: "center"
   },
-
   modal: {
     background: "#fff",
-    padding: "25px",
-    borderRadius: "12px",
-    width: "400px"
+    padding: "20px",
+    borderRadius: "10px",
+    width: "350px"
   },
-
   input: {
     width: "100%",
     padding: "10px",
     marginBottom: "10px"
   },
-
   searchBtn: {
     width: "100%",
     padding: "10px",
-    background: "#1e7f5c",
+    background: "#16a085",
     color: "#fff",
     border: "none",
     cursor: "pointer"

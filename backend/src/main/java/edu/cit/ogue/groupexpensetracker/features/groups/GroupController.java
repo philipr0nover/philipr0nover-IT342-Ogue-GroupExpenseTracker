@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/groups")
+@RequestMapping("/api/v1/groups") // ✅ match your other APIs
 @CrossOrigin(origins = "http://localhost:3000")
 public class GroupController {
 
@@ -14,10 +14,17 @@ public class GroupController {
         this.service = service;
     }
 
-    @GetMapping
-    public List<Group> getAll() {
-        return service.getAll();
+    // 🔥 USER-BASED GROUPS (FIX)
+    @GetMapping("/user/{userId}")
+    public List<Group> getByUser(@PathVariable Long userId) {
+        return service.getByUser(userId);
     }
+
+    // ❌ REMOVE THIS (causes shared data bug)
+    // @GetMapping
+    // public List<Group> getAll() {
+    //     return service.getAll();
+    // }
 
     @PostMapping
     public Group create(@RequestBody Group group) {

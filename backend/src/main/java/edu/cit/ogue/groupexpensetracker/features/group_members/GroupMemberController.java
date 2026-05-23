@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
 @RestController
-@RequestMapping("/group-members")
+@RequestMapping("/api/v1/group-members")
 @CrossOrigin(origins = "http://localhost:3000")
 public class GroupMemberController {
 
@@ -22,6 +22,11 @@ public class GroupMemberController {
 
     @PostMapping
     public GroupMember addMember(@RequestBody GroupMember gm) {
+
+        if (gm.getGroupId() == null || gm.getUserId() == null) {
+            throw new RuntimeException("groupId and userId are required");
+        }
+
         return service.addMember(gm.getGroupId(), gm.getUserId());
     }
 
@@ -30,10 +35,17 @@ public class GroupMemberController {
 
         List<GroupMember> members = service.getMembers(groupId);
 
+        if (members == null || members.isEmpty()) {
+            return List.of();
+        }
+
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (GroupMember m : members) {
+
             User user = userRepo.findById(m.getUserId()).orElse(null);
+
+            if (user == null) continue;
 
             Map<String, Object> data = new HashMap<>();
             data.put("id", m.getId());
