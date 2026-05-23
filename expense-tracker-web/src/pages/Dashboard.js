@@ -7,6 +7,7 @@ import ExpenseTable from "../features/expenses/ExpenseTable";
 function Dashboard(){
 
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalGroups, setTotalGroups] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,18 +25,26 @@ function Dashboard(){
         return;
       }
 
-      const res = await fetch(
+      // EXPENSES
+      const expenseRes = await fetch(
         `http://localhost:8080/api/v1/expenses/user/${user.id}`
       );
+      const expenseData = await expenseRes.json();
 
-      const data = await res.json();
-
-      const total = (data || []).reduce(
+      const total = (expenseData || []).reduce(
         (sum, e) => sum + (e.amount || 0),
         0
       );
 
       setTotalExpenses(total);
+
+      // GROUPS
+      const groupRes = await fetch(
+        `http://localhost:8080/api/v1/groups/user/${user.id}`
+      );
+      const groupData = await groupRes.json();
+
+      setTotalGroups(groupData?.length || 0);
 
     } catch (err) {
       console.error("Dashboard error:", err);
@@ -60,7 +69,7 @@ function Dashboard(){
 
         <HeaderBar title="Dashboard"/>
 
-        {/* 🔥 STATS SECTION */}
+        {/* STATS */}
         <div
           style={{
             display: "grid",
@@ -70,25 +79,19 @@ function Dashboard(){
           }}
         >
 
-          <div style={cardWrapper}>
-            <StatCard
-              title="Total Expenses"
-              value={loading ? "..." : `₱${totalExpenses}`}
-            />
-          </div>
+          <StatCard
+            title="Total Expenses"
+            value={loading ? "..." : `₱${totalExpenses}`}
+          />
 
-          {/* 🔥 FUTURE CARDS (safe placeholders) */}
-          <div style={cardWrapper}>
-            <StatCard title="Groups" value="—" />
-          </div>
-
-          <div style={cardWrapper}>
-            <StatCard title="Pending" value="—" />
-          </div>
+          <StatCard
+            title="Groups"
+            value={loading ? "..." : totalGroups}
+          />
 
         </div>
 
-        {/* 🔥 TABLE SECTION */}
+        {/* TABLE */}
         <div
           style={{
             marginTop: "25px",
