@@ -1,83 +1,67 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function ExpenseTable({ refresh }) {
+export default function ExpenseTable({ expenses: propExpenses, loading: propLoading, refresh }) {
 
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [ownExpenses, setOwnExpenses] = useState([]);
+  const [ownLoading, setOwnLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Only fetch on its own when no expenses are passed from parent
+  const isStandalone = propExpenses === undefined;
+
   useEffect(() => {
-    let isMounted = true;
+    if (!isStandalone) return; // Dashboard is passing data, skip fetch
 
     const fetchExpenses = async () => {
       try {
-        setLoading(true);
+        setOwnLoading(true);
         setError(null);
 
-        // ✅ GET LOGGED-IN USER
         const user = JSON.parse(localStorage.getItem("user"));
-
-        if (!user || !user.id) {
+        if (!user?.id) {
           setError("User not found");
-          setLoading(false);
           return;
         }
 
-        // 🔥 USER-BASED FETCH
         const res = await axios.get(
           `http://localhost:8080/api/v1/expenses/user/${user.id}`
         );
 
-        if (!isMounted) return;
-
         const cleanData = (res.data || []).filter(
-          (e) => e.description && e.description.trim() !== "" && e.amount
+          (e) => e.description?.trim() && e.amount
         );
 
-        setExpenses(cleanData);
+        setOwnExpenses(cleanData);
 
       } catch (err) {
-        if (!isMounted) return;
-
         console.error("Fetch error:", err);
         setError("Failed to load expenses");
       } finally {
-        if (isMounted) setLoading(false);
+        setOwnLoading(false);
       }
     };
 
     fetchExpenses();
+  }, [refresh, isStandalone]); // re-runs when refresh toggles (from Expenses.js)
 
-    return () => {
-      isMounted = false;
-    };
+  // Use parent data if provided, otherwise use own fetched data
+  const expenses = isStandalone ? ownExpenses : (propExpenses || []);
+  const loading = isStandalone ? ownLoading : (propLoading || false);
 
-  }, [refresh]);
+  if (loading) return <p style={{ padding: "20px" }}>Loading expenses...</p>;
 
-  if (loading) {
-    return <p style={{ padding: "20px" }}>Loading expenses...</p>;
-  }
-
-  if (error) {
-    return (
-      <p style={{ padding: "20px", color: "red" }}>
-        {error}
-      </p>
-    );
-  }
+  if (error) return <p style={{ padding: "20px", color: "red" }}>{error}</p>;
 
   return (
-    <table
-      style={{
-        width: "100%",
-        borderCollapse: "collapse",
-        backgroundColor: "white",
-        borderRadius: "10px",
-        overflow: "hidden",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-      }}
-    >
+    <table style={{
+      width: "100%",
+      borderCollapse: "collapse",
+      backgroundColor: "white",
+      borderRadius: "10px",
+      overflow: "hidden",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+    }}>
       <thead style={{ backgroundColor: "#16a085", color: "white" }}>
         <tr>
           <th style={{ padding: "12px", textAlign: "left" }}>Title</th>
@@ -89,7 +73,7 @@ export default function ExpenseTable({ refresh }) {
       <tbody>
         {expenses.length === 0 ? (
           <tr>
-            <td colSpan="3" style={{ padding: "15px", textAlign: "center" }}>
+            <td colSpan="3" style={{ padding: "15px", textAlign: "center", color: "#999" }}>
               No expenses yet
             </td>
           </tr>
@@ -97,31 +81,14 @@ export default function ExpenseTable({ refresh }) {
           expenses.map((e) => (
             <tr
               key={e.id}
-              style={{
-                borderBottom: "1px solid #eee",
-                transition: "background 0.2s"
-              }}
-              onMouseEnter={(event) =>
-                (event.currentTarget.style.background = "#f9f9f9")
-              }
-              onMouseLeave={(event) =>
-                (event.currentTarget.style.background = "white")
-              }
+              style={{ borderBottom: "1px solid #eee", transition: "background 0.2s" }}
+              onMouseEnter={(ev) => (ev.currentTarget.style.background = "#f9f9f9")}
+              onMouseLeave={(ev) => (ev.currentTarget.style.background = "white")}
             >
-              <td style={{ padding: "12px" }}>
-                {e.description || "No title"}
-              </td>
-
-              <td
-                style={{
-                  padding: "12px",
-                  fontWeight: "bold",
-                  color: "#16a085"
-                }}
-              >
+              <td style={{ padding: "12px" }}>{e.description || "No title"}</td>
+              <td style={{ padding: "12px", fontWeight: "bold", color: "#16a085" }}>
                 ₱{e.amount}
               </td>
-
               <td style={{ padding: "12px" }}>
                 {e.createdAt ? e.createdAt.split("T")[0] : "—"}
               </td>

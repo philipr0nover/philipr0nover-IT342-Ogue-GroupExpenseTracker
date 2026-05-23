@@ -1,14 +1,19 @@
 package edu.cit.ogue.groupexpensetracker.features.expense;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    List<Expense> findByGroupId(Long groupId);
+    @Query("SELECT e FROM Expense e WHERE e.groupId = :groupId")
+    List<Expense> findByGroupId(@Param("groupId") Long groupId);
 
-    List<Expense> findByPaidBy(Long userId);
+    // Explicit query — no ambiguity with column name mapping
+    @Query("SELECT e FROM Expense e WHERE e.paidBy = :userId")
+    List<Expense> findByPaidBy(@Param("userId") Long userId);
 
-    // 🔥 ADD THIS (THIS FIXES YOUR 500 ERROR)
-    List<Expense> findByGroupIdIn(List<Long> groupIds);
+    @Query("SELECT e FROM Expense e WHERE e.groupId IN :groupIds")
+    List<Expense> findByGroupIdIn(@Param("groupIds") List<Long> groupIds);
 }

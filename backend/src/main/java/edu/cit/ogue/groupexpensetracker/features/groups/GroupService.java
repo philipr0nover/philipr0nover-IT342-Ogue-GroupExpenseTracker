@@ -1,6 +1,7 @@
 package edu.cit.ogue.groupexpensetracker.features.groups;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,14 +20,12 @@ public class GroupService {
         this.groupMemberRepository = groupMemberRepository;
     }
 
+    @Transactional  // ← no readOnly, causes commit issues with PgBouncer
     public List<Group> getByUser(Long userId) {
+        if (userId == null) return List.of();
 
-        List<GroupMember> memberships =
-                groupMemberRepository.findByUserId(userId);
-
-        if (memberships == null || memberships.isEmpty()) {
-            return List.of();
-        }
+        List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
+        if (memberships == null || memberships.isEmpty()) return List.of();
 
         List<Long> groupIds = memberships.stream()
                 .map(GroupMember::getGroupId)
@@ -34,14 +33,12 @@ public class GroupService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        if (groupIds.isEmpty()) {
-            return List.of();
-        }
-
-        return repo.findAllById(groupIds);
+        return groupIds.isEmpty() ? List.of() : repo.findAllById(groupIds);
     }
 
+    @Transactional
     public Group create(Group group) {
+        if (group == null) throw new RuntimeException("Group cannot be null");
         return repo.save(group);
     }
 }

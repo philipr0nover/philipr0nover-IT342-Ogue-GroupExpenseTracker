@@ -1,6 +1,7 @@
 package edu.cit.ogue.groupexpensetracker.features.group_members;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -12,27 +13,21 @@ public class GroupMemberService {
         this.repo = repo;
     }
 
+    @Transactional
     public GroupMember addMember(Long groupId, Long userId) {
-
         if (groupId == null || userId == null) {
             throw new RuntimeException("groupId and userId are required");
         }
-
         if (repo.existsByGroupIdAndUserId(groupId, userId)) {
             throw new RuntimeException("User already in group");
         }
-
         return repo.save(new GroupMember(groupId, userId));
     }
 
+    @Transactional  // ← no readOnly
     public List<GroupMember> getMembers(Long groupId) {
-
-        if (groupId == null) {
-            return List.of();
-        }
-
+        if (groupId == null) return List.of();
         List<GroupMember> members = repo.findByGroupId(groupId);
-
         return members != null ? members : List.of();
     }
 }
