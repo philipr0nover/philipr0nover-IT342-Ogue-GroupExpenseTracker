@@ -7,20 +7,32 @@ export default function ExpenseTable({ expenses: propExpenses, loading: propLoad
   const [ownLoading, setOwnLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Only fetch on its own when no expenses are passed from parent
   const isStandalone = propExpenses === undefined;
 
   useEffect(() => {
-    if (!isStandalone) return; // Dashboard is passing data, skip fetch
+
+    if (!isStandalone) return;
+
+    let isMounted = true;
 
     const fetchExpenses = async () => {
       try {
         setOwnLoading(true);
         setError(null);
 
-        const user = JSON.parse(localStorage.getItem("user"));
+        let user = null;
+
+        try {
+          user = JSON.parse(localStorage.getItem("user"));
+        } catch {
+          user = null;
+        }
+
         if (!user?.id) {
-          setError("User not found");
+          if (isMounted) {
+            setOwnExpenses([]);
+            setError("User not found");
+          }
           return;
         }
 
@@ -28,30 +40,46 @@ export default function ExpenseTable({ expenses: propExpenses, loading: propLoad
           `http://localhost:8080/api/v1/expenses/user/${user.id}`
         );
 
-        const cleanData = (res.data || []).filter(
-          (e) => e.description?.trim() && e.amount
+        if (!isMounted) return;
+
+        const safeData = Array.isArray(res.data) ? res.data : [];
+
+        const cleanData = safeData.filter(
+          (e) =>
+            e &&
+            typeof e === "object" &&
+            e.description &&
+            e.description.trim() !== "" &&
+            e.amount
         );
 
         setOwnExpenses(cleanData);
 
       } catch (err) {
+        if (!isMounted) return;
+
         console.error("Fetch error:", err);
-        setError("Failed to load expenses");
+        setOwnExpenses([]); // 🔥 important
+        setError(null); // 🔥 remove blocking error UI
       } finally {
-        setOwnLoading(false);
+        if (isMounted) setOwnLoading(false);
       }
     };
 
     fetchExpenses();
-  }, [refresh, isStandalone]); // re-runs when refresh toggles (from Expenses.js)
 
-  // Use parent data if provided, otherwise use own fetched data
-  const expenses = isStandalone ? ownExpenses : (propExpenses || []);
+    return () => {
+      isMounted = false;
+    };
+
+  }, [refresh, isStandalone]);
+
+  const expenses = isStandalone ? ownExpenses : (Array.isArray(propExpenses) ? propExpenses : []);
   const loading = isStandalone ? ownLoading : (propLoading || false);
 
-  if (loading) return <p style={{ padding: "20px" }}>Loading expenses...</p>;
-
-  if (error) return <p style={{ padding: "20px", color: "red" }}>{error}</p>;
+  if (loading) {
+    return <p style={{ padding: "20px" }}>Loading expenses...</p>;
+  }
 
   return (
     <table style={{
@@ -87,7 +115,7 @@ export default function ExpenseTable({ expenses: propExpenses, loading: propLoad
             >
               <td style={{ padding: "12px" }}>{e.description || "No title"}</td>
               <td style={{ padding: "12px", fontWeight: "bold", color: "#16a085" }}>
-                ₱{e.amount}
+                ₱{e.amount || 0}
               </td>
               <td style={{ padding: "12px" }}>
                 {e.createdAt ? e.createdAt.split("T")[0] : "—"}
