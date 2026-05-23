@@ -34,8 +34,7 @@ function GroupDetails(){
       setLoadingMembers(true);
       const res = await getMembers(id);
       setMembers(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Members error:", err);
+    } catch {
       setMembers([]);
     } finally {
       setLoadingMembers(false);
@@ -50,14 +49,13 @@ function GroupDetails(){
         `http://localhost:8080/api/v1/auth/users/search?email=${email.trim()}`
       );
       setFoundUser(res.data || null);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setFoundUser(null);
     }
   };
 
   const handleAddMember = async () => {
-    if (!foundUser || !foundUser.id) return;
+    if (!foundUser?.id) return;
 
     try {
       await addMember({
@@ -68,11 +66,9 @@ function GroupDetails(){
       setEmail("");
       setFoundUser(null);
       setShowModal(false);
-
       fetchMembers();
 
-    } catch (err) {
-      console.error("Add member failed:", err);
+    } catch {
       alert("Failed to add member");
     }
   };
@@ -84,8 +80,7 @@ function GroupDetails(){
       setLoadingExpenses(true);
       const res = await getExpensesByGroup(id);
       setExpenses(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Expenses error:", err);
+    } catch {
       setExpenses([]);
     } finally {
       setLoadingExpenses(false);
@@ -108,11 +103,9 @@ function GroupDetails(){
       setTitle("");
       setAmount("");
       setShowExpenseModal(false);
-
       fetchExpenses();
 
-    } catch (err) {
-      console.error("Add expense failed:", err);
+    } catch {
       alert("Failed to add expense");
     }
   };
@@ -129,10 +122,7 @@ function GroupDetails(){
       <div style={styles.header}>
         <h2 style={styles.title}>Group #{id}</h2>
 
-        <button
-          style={styles.addMainBtn}
-          onClick={() => setShowModal(true)}
-        >
+        <button style={styles.mainBtn} onClick={() => setShowModal(true)}>
           + Add Member
         </button>
       </div>
@@ -167,10 +157,7 @@ function GroupDetails(){
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h3>Shared Expenses</h3>
-            <button
-              style={styles.addExpenseBtn}
-              onClick={() => setShowExpenseModal(true)}
-            >
+            <button style={styles.smallBtn} onClick={() => setShowExpenseModal(true)}>
               + Add
             </button>
           </div>
@@ -183,16 +170,14 @@ function GroupDetails(){
             expenses.map(exp => (
               <div key={exp.id} style={styles.expenseCard}>
                 <div>
-                  <div style={styles.expenseTitle}>
-                    {exp.description || "No title"}
-                  </div>
+                  <div style={styles.expenseTitle}>{exp.description}</div>
                   <div style={styles.expenseDate}>
-                    {exp.createdAt ? exp.createdAt.split("T")[0] : ""}
+                    {exp.createdAt?.split("T")[0]}
                   </div>
                 </div>
 
                 <span style={styles.amount}>
-                  ₱{exp.amount || 0}
+                  ₱{exp.amount}
                 </span>
               </div>
             ))
@@ -214,7 +199,7 @@ function GroupDetails(){
               onChange={(e)=>setEmail(e.target.value)}
             />
 
-            <button style={styles.searchBtn} onClick={searchUser}>
+            <button style={styles.primaryBtn} onClick={searchUser}>
               Search
             </button>
 
@@ -222,14 +207,23 @@ function GroupDetails(){
               <div style={{ marginTop: "10px" }}>
                 <p>{foundUser.firstname} {foundUser.lastname}</p>
 
-                <button
-                  style={styles.searchBtn}
-                  onClick={handleAddMember}
-                >
+                <button style={styles.primaryBtn} onClick={handleAddMember}>
                   Add to Group
                 </button>
               </div>
             )}
+
+            <button
+              style={styles.cancelBtn}
+              onClick={() => {
+                setShowModal(false);
+                setEmail("");
+                setFoundUser(null);
+              }}
+            >
+              Cancel
+            </button>
+
           </div>
         </div>
       )}
@@ -255,9 +249,21 @@ function GroupDetails(){
               onChange={(e)=>setAmount(e.target.value)}
             />
 
-            <button style={styles.searchBtn} onClick={handleAddExpense}>
+            <button style={styles.primaryBtn} onClick={handleAddExpense}>
               Save
             </button>
+
+            <button
+              style={styles.cancelBtn}
+              onClick={() => {
+                setShowExpenseModal(false);
+                setTitle("");
+                setAmount("");
+              }}
+            >
+              Cancel
+            </button>
+
           </div>
         </div>
       )}
@@ -269,17 +275,12 @@ function GroupDetails(){
 export default GroupDetails;
 
 const styles = {
-  wrapper: {
-    padding: "30px",
-    background: "#f5f6fa",
-    minHeight: "100vh"
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
+  wrapper: { padding: "30px", background: "#f5f6fa", minHeight: "100vh" },
+
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+
   title: { color: "#16a085" },
+
   backBtn: {
     background: "none",
     border: "none",
@@ -287,26 +288,30 @@ const styles = {
     cursor: "pointer",
     marginBottom: "10px"
   },
-  addMainBtn: {
+
+  mainBtn: {
     background: "#16a085",
     color: "#fff",
-    border: "none",
-    padding: "10px",
+    padding: "10px 14px",
     borderRadius: "8px",
+    border: "none",
     cursor: "pointer"
   },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "20px",
     marginTop: "20px"
   },
+
   card: {
     background: "#fff",
     padding: "20px",
-    borderRadius: "10px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+    borderRadius: "12px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.05)"
   },
+
   memberCard: {
     display: "flex",
     alignItems: "center",
@@ -314,6 +319,7 @@ const styles = {
     padding: "10px 0",
     borderBottom: "1px solid #eee"
   },
+
   avatar: {
     width: "35px",
     height: "35px",
@@ -324,24 +330,35 @@ const styles = {
     alignItems: "center",
     justifyContent: "center"
   },
+
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
+
+  smallBtn: {
+    background: "#27ae60",
+    color: "#fff",
+    padding: "6px 10px",
+    borderRadius: "6px",
+    border: "none",
+    cursor: "pointer"
+  },
+
   expenseCard: {
     display: "flex",
     justifyContent: "space-between",
     padding: "10px 0",
     borderBottom: "1px solid #eee"
   },
+
   expenseTitle: { fontWeight: "600" },
   expenseDate: { fontSize: "12px", color: "#888" },
   amount: { color: "#16a085", fontWeight: "bold" },
-  addExpenseBtn: {
-    background: "#27ae60",
-    color: "#fff",
-    border: "none",
-    padding: "5px 10px",
-    borderRadius: "6px",
-    cursor: "pointer"
-  },
+
   empty: { color: "#999" },
+
   overlay: {
     position: "fixed",
     top: 0,
@@ -353,22 +370,36 @@ const styles = {
     justifyContent: "center",
     alignItems: "center"
   },
+
   modal: {
     background: "#fff",
     padding: "20px",
-    borderRadius: "10px",
-    width: "350px"
+    borderRadius: "12px",
+    width: "360px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px"
   },
+
   input: {
-    width: "100%",
     padding: "10px",
-    marginBottom: "10px"
+    borderRadius: "8px",
+    border: "1px solid #ddd"
   },
-  searchBtn: {
-    width: "100%",
-    padding: "10px",
+
+  primaryBtn: {
     background: "#16a085",
     color: "#fff",
+    padding: "10px",
+    borderRadius: "8px",
+    border: "none",
+    cursor: "pointer"
+  },
+
+  cancelBtn: {
+    background: "#eee",
+    padding: "10px",
+    borderRadius: "8px",
     border: "none",
     cursor: "pointer"
   }

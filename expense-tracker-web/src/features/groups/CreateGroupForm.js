@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { createGroup } from "../../services/groupService";
-import axios from "axios";
 
 function CreateGroupForm({ onSuccess }) {
 
   const [groupName, setGroupName] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,60 +14,87 @@ function CreateGroupForm({ onSuccess }) {
     }
 
     try {
-      setLoading(true);
-
       const user = JSON.parse(localStorage.getItem("user"));
 
-      if (!user || !user.id) {
-        alert("User not found");
-        return;
-      }
-
-      // ✅ CREATE GROUP
       const res = await createGroup({
         name: groupName.trim()
       });
 
-      const groupId = res?.data?.id;
+      const groupId = res.data.id;
 
-      if (!groupId) {
-        throw new Error("Invalid group ID");
-      }
-
-      // ✅ LINK USER TO GROUP (USE AXIOS FOR STABILITY)
-      await axios.post("http://localhost:8080/api/v1/group-members", {
-        groupId: groupId,
-        userId: user.id
+      await fetch("http://localhost:8080/api/v1/group-members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId,
+          userId: user.id
+        })
       });
 
       setGroupName("");
-
       if (onSuccess) onSuccess();
 
     } catch (err) {
-      console.error("Create group error:", err);
-      alert(err?.response?.data?.message || "Failed to create group");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      alert("Failed to create group");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px" }}>
+    <div style={styles.container}>
+      <form onSubmit={handleSubmit} style={styles.form}>
 
-      <input
-        placeholder="Group name"
-        value={groupName}
-        onChange={(e) => setGroupName(e.target.value)}
-        disabled={loading}
-      />
+        <input
+          placeholder="Enter group name..."
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+          style={styles.input}
+        />
 
-      <button type="submit" disabled={loading}>
-        {loading ? "Creating..." : "Create"}
-      </button>
+        <button type="submit" style={styles.button}>
+          Create
+        </button>
 
-    </form>
+      </form>
+    </div>
   );
 }
 
 export default CreateGroupForm;
+
+const styles = {
+  container: {
+    maxWidth: "600px", // ✅ NOT full width anymore
+    marginTop: "10px"
+  },
+
+  form: {
+    display: "flex",
+    gap: "10px",
+    background: "#ffffff",
+    padding: "10px",
+    borderRadius: "12px",
+    border: "1px solid #eee",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.04)"
+  },
+
+  input: {
+    flex: 1,
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    fontSize: "14px",
+    outline: "none"
+  },
+
+  button: {
+    background: "#16a085",
+    color: "white",
+    border: "none",
+    padding: "10px 18px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+    whiteSpace: "nowrap"
+  }
+};

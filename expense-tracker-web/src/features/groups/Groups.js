@@ -18,21 +18,26 @@ function Groups() {
     try {
       setLoading(true);
 
-      const user = JSON.parse(localStorage.getItem("user"));
-
-      if (!user || !user.id) {
+      const userData = localStorage.getItem("user");
+      if (!userData) {
         setGroups([]);
-        setLoading(false);
+        return;
+      }
+
+      const user = JSON.parse(userData);
+
+      if (!user?.id) {
+        setGroups([]);
         return;
       }
 
       const res = await getGroups(user.id);
 
-      setGroups(Array.isArray(res.data) ? res.data : []);
+      setGroups(res.data || []);
 
     } catch (err) {
       console.error("Fetch groups error:", err);
-      setGroups([]);
+      setGroups([]); // ✅ prevent UI crash
     } finally {
       setLoading(false);
     }
@@ -43,45 +48,32 @@ function Groups() {
 
       <Sidebar />
 
-      <div
-        style={{
-          flex: 1,
-          padding: "30px",
-          background: "#f5f6fa",
-          minHeight: "100vh"
-        }}
-      >
+      <div style={styles.container}>
 
         <HeaderBar title="Groups" />
 
-        <p style={{ color: "#777", marginTop: "5px" }}>
+        <p style={styles.subtitle}>
           Manage your groups
         </p>
 
-        <div style={{ marginTop: "20px" }}>
+        {/* CREATE */}
+        <div style={styles.formWrapper}>
           <CreateGroupForm onSuccess={fetchGroups} />
         </div>
 
-        <div
-          style={{
-            marginTop: "20px",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-            gap: "20px"
-          }}
-        >
+        {/* GROUP LIST */}
+        <div style={styles.grid}>
 
           {loading ? (
-            <p>Loading...</p>
+            <p style={styles.empty}>Loading...</p>
           ) : groups.length === 0 ? (
-            <p>No groups yet</p>
+            <p style={styles.empty}>No groups yet</p>
           ) : (
             groups.map((group) => (
               <GroupCard
                 key={group.id}
                 id={group.id}
                 name={group.name}
-                members={group.members?.length || 0}
               />
             ))
           )}
@@ -95,3 +87,34 @@ function Groups() {
 }
 
 export default Groups;
+
+const styles = {
+  container: {
+    flex: 1,
+    padding: "30px",
+    background: "#f5f6fa",
+    minHeight: "100vh"
+  },
+
+  subtitle: {
+    color: "#777",
+    marginTop: "5px",
+    marginBottom: "10px"
+  },
+
+  formWrapper: {
+    marginTop: "10px",
+    marginBottom: "20px"
+  },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "20px"
+  },
+
+  empty: {
+    color: "#777",
+    fontSize: "14px"
+  }
+};
