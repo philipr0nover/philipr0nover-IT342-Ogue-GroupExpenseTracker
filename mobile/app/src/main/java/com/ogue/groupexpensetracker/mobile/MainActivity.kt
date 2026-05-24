@@ -64,13 +64,25 @@ class MainActivity : ComponentActivity() {
                                 firstname     = user!!.firstname,
                                 lastname      = user!!.lastname,
                                 onAddExpense  = { groupId ->
-                                    selectedGroupId = groupId
+                                    // ✅ If valid groupId go to AddExpenseScreen
+                                    // If no groups yet, redirect to CreateGroupScreen
+                                    if (groupId > 0) {
+                                        selectedGroupId = groupId
+                                    } else {
+                                        isCreatingGroup = true
+                                    }
                                 },
                                 onCreateGroup = {
                                     isCreatingGroup = true
                                 },
                                 onGroupClick  = { groupId ->
                                     viewingGroupId = groupId
+                                },
+                                onLogout      = {
+                                    user            = null
+                                    selectedGroupId = null
+                                    viewingGroupId  = null
+                                    isCreatingGroup = false
                                 }
                             )
                         }

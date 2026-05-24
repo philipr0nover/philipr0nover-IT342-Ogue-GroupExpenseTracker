@@ -48,12 +48,14 @@ fun DashboardScreen(
     lastname: String,
     onAddExpense: (Long) -> Unit,
     onCreateGroup: () -> Unit,
-    onGroupClick: (Long) -> Unit      // ← tapping a group card → GroupDetailScreen
+    onGroupClick: (Long) -> Unit,
+    onLogout: () -> Unit
 ) {
-    var groups    by remember { mutableStateOf<List<Group>>(emptyList()) }
-    var expenses  by remember { mutableStateOf<List<Expense>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var groups         by remember { mutableStateOf<List<Group>>(emptyList()) }
+    var expenses       by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var isLoading      by remember { mutableStateOf(true) }
     var isMenuExpanded by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val api     = remember { ApiClient.retrofit.create(ApiService::class.java) }
@@ -82,13 +84,49 @@ fun DashboardScreen(
 
     val totalExpenses = expenses.sumOf { it.amount }
 
+    // ── Logout Confirmation Dialog ────────────────────────────────────────────
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text("Logout", fontWeight = FontWeight.Bold, color = TextPrimary)
+            },
+            text = {
+                Text("Are you sure you want to logout?", color = TextSecond)
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Green),
+                    shape  = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Logout", color = Color.White)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showLogoutDialog = false },
+                    shape   = RoundedCornerShape(8.dp),
+                    colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextSecond)
+                ) {
+                    Text("Cancel")
+                }
+            },
+            shape          = RoundedCornerShape(16.dp),
+            containerColor = CardBg
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Background)
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier       = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 88.dp)
         ) {
 
@@ -101,29 +139,42 @@ fun DashboardScreen(
                         .padding(horizontal = 20.dp, vertical = 16.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier              = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment     = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "ExpenseTracker",
-                            color = Color.White,
+                            text       = "ExpenseTracker",
+                            color      = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize   = 20.sp
                         )
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(GreenDark),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = firstname.take(1).uppercase(),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
+                            Box(
+                                modifier           = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(GreenDark),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text       = firstname.take(1).uppercase(),
+                                    color      = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize   = 16.sp
+                                )
+                            }
+                            TextButton(onClick = { showLogoutDialog = true }) {
+                                Text(
+                                    text       = "Logout",
+                                    color      = Color.White,
+                                    fontSize   = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
@@ -132,10 +183,10 @@ fun DashboardScreen(
             // ── PAGE TITLE ───────────────────────────────────────────────────
             item {
                 Text(
-                    text = "Dashboard",
-                    style = MaterialTheme.typography.headlineSmall,
+                    text     = "Dashboard",
+                    style    = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color    = TextPrimary,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)
                 )
             }
@@ -143,15 +194,13 @@ fun DashboardScreen(
             // ── STATS CARDS ──────────────────────────────────────────────────
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    modifier              = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                        modifier  = Modifier.weight(1f),
+                        shape     = RoundedCornerShape(12.dp),
+                        colors    = CardDefaults.cardColors(containerColor = CardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -159,16 +208,16 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 "₱${"%.2f".format(totalExpenses)}",
-                                color = TextPrimary,
+                                color      = TextPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp
+                                fontSize   = 22.sp
                             )
                         }
                     }
                     Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                        modifier  = Modifier.weight(1f),
+                        shape     = RoundedCornerShape(12.dp),
+                        colors    = CardDefaults.cardColors(containerColor = CardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -176,9 +225,9 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 "${groups.size}",
-                                color = TextPrimary,
+                                color      = TextPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp
+                                fontSize   = 22.sp
                             )
                         }
                     }
@@ -189,24 +238,22 @@ fun DashboardScreen(
             // ── RECENT EXPENSES TABLE ─────────────────────────────────────────
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    modifier  = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    shape     = RoundedCornerShape(12.dp),
+                    colors    = CardDefaults.cardColors(containerColor = CardBg),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column {
                         Text(
-                            text = "Recent Expenses",
+                            text       = "Recent Expenses",
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = TextPrimary,
-                            modifier = Modifier.padding(16.dp)
+                            fontSize   = 16.sp,
+                            color      = TextPrimary,
+                            modifier   = Modifier.padding(16.dp)
                         )
                         HorizontalDivider(color = Divider)
                         Row(
-                            modifier = Modifier
+                            modifier              = Modifier
                                 .fillMaxWidth()
                                 .background(Green)
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -216,24 +263,22 @@ fun DashboardScreen(
                             Text("Amount", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         }
                         if (isLoading) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                contentAlignment = Alignment.Center
-                            ) { CircularProgressIndicator(color = Green, strokeWidth = 2.dp) }
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Green, strokeWidth = 2.dp)
+                            }
                         } else if (expenses.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                contentAlignment = Alignment.Center
-                            ) { Text("No expenses yet", color = TextSecond, fontSize = 14.sp) }
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Text("No expenses yet", color = TextSecond, fontSize = 14.sp)
+                            }
                         } else {
                             expenses.take(5).forEachIndexed { index, expense ->
                                 Row(
-                                    modifier = Modifier
+                                    modifier              = Modifier
                                         .fillMaxWidth()
                                         .background(if (index % 2 == 0) Color.White else Color(0xFFF9FAFB))
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment     = Alignment.CenterVertically
                                 ) {
                                     Text(expense.description, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(2f))
                                     Text("₱${"%.2f".format(expense.amount)}", color = AmountGreen, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
@@ -252,55 +297,79 @@ fun DashboardScreen(
             // ── YOUR GROUPS ───────────────────────────────────────────────────
             item {
                 Text(
-                    text = "Your Groups",
+                    text       = "Your Groups",
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = TextPrimary,
-                    modifier = Modifier.padding(horizontal = 20.dp)
+                    fontSize   = 16.sp,
+                    color      = TextPrimary,
+                    modifier   = Modifier.padding(horizontal = 20.dp)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
             if (isLoading) {
                 item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator(color = Green) }
+                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Green)
+                    }
                 }
             } else if (groups.isEmpty()) {
                 item {
-                    Text("No groups found", color = TextSecond, modifier = Modifier.padding(horizontal = 20.dp))
+                    // ✅ Friendly empty state guiding new users
+                    Column(
+                        modifier            = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "No groups yet",
+                            color      = TextSecond,
+                            fontSize   = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "Create a group first, then you can add expenses to it.",
+                            color    = TextSecond,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onCreateGroup,
+                            colors  = ButtonDefaults.buttonColors(containerColor = Green),
+                            shape   = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Create Your First Group", color = Color.White, fontSize = 13.sp)
+                        }
+                    }
                 }
             } else {
                 items(groups) { group ->
                     Card(
-                        modifier = Modifier
+                        modifier  = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 5.dp)
-                            .clickable { onGroupClick(group.id) },  // ← goes to GroupDetailScreen
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                            .clickable { onGroupClick(group.id) },
+                        shape     = RoundedCornerShape(12.dp),
+                        colors    = CardDefaults.cardColors(containerColor = CardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                            modifier          = Modifier.fillMaxWidth().padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
+                                modifier         = Modifier
                                     .size(42.dp)
                                     .clip(CircleShape)
                                     .background(GreenLight),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = group.name.take(1).uppercase(),
-                                    color = GreenText,
+                                    text       = group.name.take(1).uppercase(),
+                                    color      = GreenText,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
+                                    fontSize   = 18.sp
                                 )
                             }
                             Spacer(modifier = Modifier.width(14.dp))
@@ -316,11 +385,11 @@ fun DashboardScreen(
 
         // ── EXPANDABLE SPEED DIAL FAB ─────────────────────────────────────────
         Column(
-            modifier = Modifier
+            modifier              = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp),
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalAlignment   = Alignment.End,
+            verticalArrangement   = Arrangement.spacedBy(12.dp)
         ) {
             AnimatedVisibility(visible = isMenuExpanded) {
                 Column(
@@ -329,30 +398,30 @@ fun DashboardScreen(
                 ) {
                     // Option A: Create Group
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment     = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = CardBg),
+                            colors    = CardDefaults.cardColors(containerColor = CardBg),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            shape = RoundedCornerShape(6.dp)
+                            shape     = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 "Create Group",
-                                color = TextPrimary,
-                                fontSize = 14.sp,
+                                color      = TextPrimary,
+                                fontSize   = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                modifier   = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
                         SmallFloatingActionButton(
-                            onClick = {
+                            onClick        = {
                                 isMenuExpanded = false
                                 onCreateGroup()
                             },
                             containerColor = GreenDark,
-                            contentColor = Color.White,
-                            shape = CircleShape
+                            contentColor   = Color.White,
+                            shape          = CircleShape
                         ) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = "Create Group")
                         }
@@ -360,34 +429,37 @@ fun DashboardScreen(
 
                     // Option B: Add Expense
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment     = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = CardBg),
+                            colors    = CardDefaults.cardColors(containerColor = CardBg),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            shape = RoundedCornerShape(6.dp)
+                            shape     = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 "Add Expense",
-                                color = TextPrimary,
-                                fontSize = 14.sp,
+                                color      = TextPrimary,
+                                fontSize   = 14.sp,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                modifier   = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
                         SmallFloatingActionButton(
                             onClick = {
                                 isMenuExpanded = false
                                 if (groups.isNotEmpty()) {
+                                    // ✅ Has groups — go to AddExpenseScreen with first group
                                     onAddExpense(groups.first().id)
                                 } else {
-                                    Toast.makeText(context, "No groups available", Toast.LENGTH_SHORT).show()
+                                    // ✅ No groups — redirect to CreateGroupScreen
+                                    Toast.makeText(context, "Create a group first before adding expenses", Toast.LENGTH_LONG).show()
+                                    onCreateGroup()
                                 }
                             },
                             containerColor = GreenDark,
-                            contentColor = Color.White,
-                            shape = CircleShape
+                            contentColor   = Color.White,
+                            shape          = CircleShape
                         ) {
                             Icon(imageVector = Icons.Default.Add, contentDescription = "Add Expense")
                         }
@@ -397,19 +469,19 @@ fun DashboardScreen(
 
             val rotationAngle by animateFloatAsState(
                 targetValue = if (isMenuExpanded) 45f else 0f,
-                label = "fabRotation"
+                label       = "fabRotation"
             )
 
             FloatingActionButton(
-                onClick = { isMenuExpanded = !isMenuExpanded },
+                onClick        = { isMenuExpanded = !isMenuExpanded },
                 containerColor = Green,
-                contentColor = Color.White,
-                shape = CircleShape
+                contentColor   = Color.White,
+                shape          = CircleShape
             ) {
                 Icon(
-                    imageVector = Icons.Default.Add,
+                    imageVector     = Icons.Default.Add,
                     contentDescription = "Open Actions Menu",
-                    modifier = Modifier.rotate(rotationAngle)
+                    modifier        = Modifier.rotate(rotationAngle)
                 )
             }
         }
