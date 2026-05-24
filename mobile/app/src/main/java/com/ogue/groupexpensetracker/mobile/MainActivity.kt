@@ -7,6 +7,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import com.ogue.groupexpensetracker.mobile.ui.theme.GroupExpenseMobileTheme
 
+// Navigation States Enum
+enum class Screen {
+    LOGIN,
+    REGISTER,
+    DASHBOARD,
+    GROUP_DETAILS,
+    ADD_EXPENSE,
+    CREATE_GROUP
+}
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,74 +25,109 @@ class MainActivity : ComponentActivity() {
         setContent {
             GroupExpenseMobileTheme {
                 Surface {
-                    var user            by remember { mutableStateOf<UserResponse?>(null) }
+                    // Global session object
+                    var user by remember { mutableStateOf<UserResponse?>(null) }
+
+                    // Unified navigation state management
+                    var currentScreen by remember { mutableStateOf(Screen.LOGIN) }
+
+                    // Route parameters tracking
                     var selectedGroupId by remember { mutableStateOf<Long?>(null) }
                     var viewingGroupId  by remember { mutableStateOf<Long?>(null) }
-                    var isCreatingGroup by remember { mutableStateOf(false) }
 
-                    when {
+                    // Safety redirect: If user logs out or session drops, kick back to login routing
+                    if (user == null && currentScreen != Screen.REGISTER) {
+                        currentScreen = Screen.LOGIN
+                    }
 
-                        // 🔐 LOGIN
-                        user == null -> {
+                    when (currentScreen) {
+
+                        // 🔐 LOGIN VIEW
+                        Screen.LOGIN -> {
                             LoginScreen(
                                 onLoginSuccess = { loggedInUser ->
                                     user = loggedInUser
+                                    currentScreen = Screen.DASHBOARD
+                                },
+                                onNavigateToRegister = {
+                                    currentScreen = Screen.REGISTER
                                 }
                             )
                         }
 
-                        // 💸 ADD EXPENSE standalone screen
-                        selectedGroupId != null -> {
+                        // 📝 REGISTER VIEW
+                        Screen.REGISTER -> {
+                            RegisterScreen(
+                                onRegisterSuccess = {
+                                    // Send user back to sign in with their brand new credentials
+                                    currentScreen = Screen.LOGIN
+                                },
+                                onNavigateToLogin = {
+                                    currentScreen = Screen.LOGIN
+                                }
+                            )
+                        }
+
+                        // 💸 ADD EXPENSE SCREEN
+                        Screen.ADD_EXPENSE -> {
                             AddExpenseScreen(
-                                groupId = selectedGroupId!!,
-                                userId  = user!!.id,
-                                onBack  = { selectedGroupId = null }
+                                groupId = selectedGroupId ?: 0L,
+                                userId  = user?.id ?: 0L,
+                                onBack  = {
+                                    selectedGroupId = null
+                                    currentScreen = Screen.DASHBOARD
+                                }
                             )
                         }
 
-                        // 🔍 GROUP DETAIL
-                        viewingGroupId != null -> {
+                        // 🔍 GROUP DETAIL SCREEN
+                        Screen.GROUP_DETAILS -> {
                             GroupDetailScreen(
-                                groupId = viewingGroupId!!,
-                                userId  = user!!.id,
-                                onBack  = { viewingGroupId = null }
+                                groupId = viewingGroupId ?: 0L,
+                                userId  = user?.id ?: 0L,
+                                onBack  = {
+                                    viewingGroupId = null
+                                    currentScreen = Screen.DASHBOARD
+                                }
                             )
                         }
 
-                        // ➕ CREATE GROUP
-                        isCreatingGroup -> {
+                        // ➕ CREATE GROUP SCREEN
+                        Screen.CREATE_GROUP -> {
                             CreateGroupScreen(
-                                userId = user!!.id,
-                                onBack = { isCreatingGroup = false }
+                                userId = user?.id ?: 0L,
+                                onBack = { currentScreen = Screen.DASHBOARD }
                             )
                         }
 
-                        // 🏠 DASHBOARD
-                        else -> {
+                        // 🏠 MAIN DASHBOARD VIEW
+                        Screen.DASHBOARD -> {
                             DashboardScreen(
-                                userId        = user!!.id,
-                                firstname     = user!!.firstname,
-                                lastname      = user!!.lastname,
+                                userId        = user?.id ?: 0L,
+                                firstname     = user?.firstname ?: "",
+                                lastname      = user?.lastname ?: "",
                                 onAddExpense  = { groupId ->
-                                    // ✅ If valid groupId go to AddExpenseScreen
-                                    // If no groups yet, redirect to CreateGroupScreen
-                                    if (groupId > 0) {
+                                    // 🔥 FIX: Changed check from > 0 to >= 0 to allow 0L baseline value
+                                    if (groupId >= 0L) {
                                         selectedGroupId = groupId
+                                        currentScreen = Screen.ADD_EXPENSE
                                     } else {
-                                        isCreatingGroup = true
+                                        currentScreen = Screen.CREATE_GROUP
                                     }
                                 },
                                 onCreateGroup = {
-                                    isCreatingGroup = true
+                                    currentScreen = Screen.CREATE_GROUP
                                 },
                                 onGroupClick  = { groupId ->
                                     viewingGroupId = groupId
+                                    currentScreen = Screen.GROUP_DETAILS
                                 },
                                 onLogout      = {
+                                    // Complete session clearing state reset
                                     user            = null
                                     selectedGroupId = null
                                     viewingGroupId  = null
-                                    isCreatingGroup = false
+                                    currentScreen   = Screen.LOGIN
                                 }
                             )
                         }

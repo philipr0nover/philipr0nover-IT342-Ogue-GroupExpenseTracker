@@ -17,6 +17,14 @@ data class LoginRequest(
     val password: String
 )
 
+// Added to handle the registration payload
+data class RegisterRequest(
+    val firstname: String,
+    val lastname: String,
+    val email: String,
+    val password: String
+)
+
 data class UserResponse(
     val id: Long,
     val firstname: String,
@@ -62,6 +70,10 @@ interface ApiService {
     // 🔐 LOGIN
     @POST("auth/login")
     fun login(@Body request: LoginRequest): Call<UserResponse>
+
+    // 📝 REGISTER
+    @POST("auth/register")
+    fun register(@Body request: RegisterRequest): Call<UserResponse>
 
     // 🔍 SEARCH USER BY EMAIL
     @GET("auth/users/search")

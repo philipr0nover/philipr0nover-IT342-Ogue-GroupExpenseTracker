@@ -23,11 +23,10 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-// ─── Brand Colors (Updated to match the login concept theme) ────────────────
-private val Green       = Color(0xFF26C69A) // Main concept green theme
-private val GreenDark   = Color(0xFF1BAB84) // Balanced darker tone for header contrast
-private val GreenLight  = Color(0xFFE3F8F2) // Clean mint tint background
-private val Background  = Color(0xFFF1F4F9) // Concept off-white app background
+private val Green       = Color(0xFF26C69A)
+private val GreenDark   = Color(0xFF1BAB84)
+private val GreenLight  = Color(0xFFE3F8F2)
+private val Background  = Color(0xFFF1F4F9)
 private val CardBg      = Color(0xFFFFFFFF)
 private val TextPrimary = Color(0xFF111827)
 private val TextSecond  = Color(0xFF6B7280)
@@ -101,14 +100,13 @@ fun AddExpenseScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                // Subtitle
                 Text(
                     text = "Fill in the details below to record a new expense.",
                     color = TextSecond,
                     fontSize = 14.sp
                 )
 
-                // ── Description Field ────────────────────────────────────────
+                // Description Field
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = CardBg),
@@ -147,7 +145,7 @@ fun AddExpenseScreen(
                     }
                 }
 
-                // ── Amount Field ─────────────────────────────────────────────
+                // Amount Field
                 Card(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = CardBg),
@@ -190,10 +188,9 @@ fun AddExpenseScreen(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // ── Submit Button ────────────────────────────────────────────
+                // Submit Button
                 Button(
                     onClick = {
-                        // Validate
                         descError   = description.isBlank()
                         amountError = amount.toDoubleOrNull() == null || amount.toDoubleOrNull()!! <= 0
 
@@ -224,7 +221,7 @@ fun AddExpenseScreen(
 
                             override fun onFailure(call: Call<Expense>, t: Throwable) {
                                 isLoading = false
-                                Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_LONG).show()
                             }
                         })
                     },
@@ -253,7 +250,7 @@ fun AddExpenseScreen(
                     }
                 }
 
-                // ── Cancel Button ────────────────────────────────────────────
+                // Cancel Button
                 OutlinedButton(
                     onClick = onBack,
                     modifier = Modifier

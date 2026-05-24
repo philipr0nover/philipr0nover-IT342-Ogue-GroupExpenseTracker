@@ -314,7 +314,7 @@ fun DashboardScreen(
                 }
             } else if (groups.isEmpty()) {
                 item {
-                    // ✅ Friendly empty state guiding new users
+                    // Friendly empty state guiding new users
                     Column(
                         modifier            = Modifier
                             .fillMaxWidth()
@@ -329,17 +329,28 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            "Create a group first, then you can add expenses to it.",
+                            "Create a group first, or add an unassigned expense directly.",
                             color    = TextSecond,
                             fontSize = 13.sp
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = onCreateGroup,
-                            colors  = ButtonDefaults.buttonColors(containerColor = Green),
-                            shape   = RoundedCornerShape(8.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Create Your First Group", color = Color.White, fontSize = 13.sp)
+                            Button(
+                                onClick = onCreateGroup,
+                                colors  = ButtonDefaults.buttonColors(containerColor = Green),
+                                shape   = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("Create Group", color = Color.White, fontSize = 13.sp)
+                            }
+                            OutlinedButton(
+                                onClick = { onAddExpense(0L) }, // 🔥 Force route tracking to Add Expense even with 0 groups
+                                shape   = RoundedCornerShape(8.dp),
+                                colors  = ButtonDefaults.outlinedButtonColors(contentColor = Green)
+                            ) {
+                                Text("Add Expense", fontSize = 13.sp)
+                            }
                         }
                     }
                 }
@@ -448,14 +459,10 @@ fun DashboardScreen(
                         SmallFloatingActionButton(
                             onClick = {
                                 isMenuExpanded = false
-                                if (groups.isNotEmpty()) {
-                                    // ✅ Has groups — go to AddExpenseScreen with first group
-                                    onAddExpense(groups.first().id)
-                                } else {
-                                    // ✅ No groups — redirect to CreateGroupScreen
-                                    Toast.makeText(context, "Create a group first before adding expenses", Toast.LENGTH_LONG).show()
-                                    onCreateGroup()
-                                }
+                                // ✅ Fixed logic: Open AddExpenseScreen matching web flexibility.
+                                // If groups exist, default to the first group ID, otherwise pass 0L.
+                                val baselineGroupId = if (groups.isNotEmpty()) groups.first().id else 0L
+                                onAddExpense(baselineGroupId)
                             },
                             containerColor = GreenDark,
                             contentColor   = Color.White,
