@@ -18,13 +18,11 @@ public class GroupController {
         this.service = service;
     }
 
-    // Get all groups for a user
     @GetMapping("/user/{userId}")
     public List<Group> getByUser(@PathVariable Long userId) {
         return service.getByUser(userId);
     }
 
-    // ✅ NEW: Get a single group by ID (needed so frontend can read createdBy)
     @GetMapping("/{id}")
     public ResponseEntity<Group> getById(@PathVariable Long id) {
         Group group = service.findById(id)
@@ -32,13 +30,22 @@ public class GroupController {
         return ResponseEntity.ok(group);
     }
 
-    // ✅ UPDATED: expects createdBy in the request body
-    // Frontend must send: { name: "...", createdBy: <userId> }
     @PostMapping
     public ResponseEntity<Group> create(@RequestBody Group group) {
         if (group.getCreatedBy() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "createdBy is required");
         }
         return ResponseEntity.ok(service.create(group));
+    }
+
+    // ✅ NEW: DELETE /api/v1/groups/{id}?requesterId={requesterId}
+    // Only the group creator can delete the group
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGroup(
+            @PathVariable Long id,
+            @RequestParam Long requesterId) {
+
+        service.deleteGroup(id, requesterId);
+        return ResponseEntity.noContent().build();
     }
 }

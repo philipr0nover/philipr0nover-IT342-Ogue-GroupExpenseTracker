@@ -1,14 +1,15 @@
 package edu.cit.ogue.groupexpensetracker.features.groups;
 
+import edu.cit.ogue.groupexpensetracker.features.group_members.GroupMemberRepository;
+import edu.cit.ogue.groupexpensetracker.features.group_members.GroupMember;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import edu.cit.ogue.groupexpensetracker.features.group_members.GroupMember;
-import edu.cit.ogue.groupexpensetracker.features.group_members.GroupMemberRepository;
 
 @Service
 public class GroupService {
@@ -38,7 +39,6 @@ public class GroupService {
         return groupIds.isEmpty() ? List.of() : repo.findAllById(groupIds);
     }
 
-    // ✅ NEW: used by GroupController and isCreator check
     public Optional<Group> findById(Long groupId) {
         if (groupId == null) return Optional.empty();
         return repo.findById(groupId);
@@ -50,11 +50,26 @@ public class GroupService {
         return repo.save(group);
     }
 
-    // Used by GroupMemberService and ExpenseService
     public boolean isCreator(Long groupId, Long userId) {
         if (groupId == null || userId == null) return false;
         return repo.findById(groupId)
                 .map(g -> userId.equals(g.getCreatedBy()))
                 .orElse(false);
+    }
+
+    // ✅ NEW: delete group and all its members — only creator allowed
+    @Transactional
+    public void deleteGroup(Long groupId, Long requesterId) {
+        Group group = repo.findById(groupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
+
+        if (!group.getCreatedBy().equals(requesterId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the group creator can delete this group");
+        }
+
+        // Delete all memberships first to avoid FK constraint errors
+        groupMemberRepository.deleteByGroupId(groupId);
+
+        repo.delete(group);
     }
 }
