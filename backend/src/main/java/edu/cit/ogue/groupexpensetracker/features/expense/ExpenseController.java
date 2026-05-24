@@ -1,5 +1,6 @@
 package edu.cit.ogue.groupexpensetracker.features.expense;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -19,7 +20,6 @@ public class ExpenseController {
         return expenseService.getByGroup(groupId);
     }
 
-    // ✅ ADD THIS (user-based)
     @GetMapping("/user/{userId}")
     public List<Expense> getByUser(@PathVariable Long userId) {
         return expenseService.getByUser(userId);
@@ -28,5 +28,15 @@ public class ExpenseController {
     @PostMapping
     public Expense addExpense(@RequestBody Expense expense) {
         return expenseService.addExpense(expense);
+    }
+
+    // ✅ NEW: DELETE /api/v1/expenses/{expenseId}?requesterId={requesterId}
+    @DeleteMapping("/{expenseId}")
+    public ResponseEntity<Void> deleteExpense(
+            @PathVariable Long expenseId,
+            @RequestParam Long requesterId) {
+
+        expenseService.deleteExpense(expenseId, requesterId);
+        return ResponseEntity.noContent().build();
     }
 }

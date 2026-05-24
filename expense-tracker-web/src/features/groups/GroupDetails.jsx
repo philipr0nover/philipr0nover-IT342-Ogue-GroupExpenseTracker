@@ -22,12 +22,43 @@ function GroupDetails() {
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [loadingExpenses, setLoadingExpenses] = useState(true);
 
+  const [groupCreatorId, setGroupCreatorId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
   const totalAmount = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // ✅ FIX: force both to Number so "1" === 1 doesn't fail the comparison
+  const isCreator = currentUserId !== null &&
+                    groupCreatorId !== null &&
+                    Number(currentUserId) === Number(groupCreatorId);
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.id) setCurrentUserId(user.id);
+    } catch {
+      setCurrentUserId(null);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadData = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8080/api/v1/groups/${id}`);
+        if (isMounted) {
+          // ✅ FIX: log what we get so you can see the values in console
+          console.log("[GroupDetails] group data:", res.data);
+          console.log("[GroupDetails] createdBy:", res.data?.createdBy);
+          if (res.data?.createdBy != null) {
+            setGroupCreatorId(res.data.createdBy);
+          }
+        }
+      } catch (err) {
+        console.warn("[GroupDetails] failed to fetch group:", err?.response?.status, err?.message);
+      }
+
       try {
         setLoadingMembers(true);
         const res = await getMembers(id);
@@ -82,11 +113,15 @@ function GroupDetails() {
   };
 
   const handleRemoveMember = async (memberId) => {
+    if (!currentUserId) { alert("Session expired. Please log in again."); return; }
     try {
-      await axios.delete(`http://localhost:8080/api/v1/group-members/${memberId}`);
+      await axios.delete(
+        `http://localhost:8080/api/v1/group-members/${memberId}?requesterId=${currentUserId}`
+      );
       setMembers(prev => prev.filter(m => m.id !== memberId));
-    } catch {
-      alert("Failed to remove member");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to remove member.";
+      alert(msg);
     }
   };
 
@@ -117,11 +152,15 @@ function GroupDetails() {
   };
 
   const handleDeleteExpense = async (expenseId) => {
+    if (!currentUserId) { alert("Session expired. Please log in again."); return; }
     try {
-      await axios.delete(`http://localhost:8080/api/v1/expenses/${expenseId}`);
+      await axios.delete(
+        `http://localhost:8080/api/v1/expenses/${expenseId}?requesterId=${currentUserId}`
+      );
       setExpenses(prev => prev.filter(e => e.id !== expenseId));
-    } catch {
-      alert("Failed to delete expense");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to delete expense.";
+      alert(msg);
     }
   };
 
@@ -130,12 +169,10 @@ function GroupDetails() {
   return (
     <div style={styles.wrapper}>
 
-      {/* BACK BUTTON */}
       <button style={styles.backBtn} onClick={() => navigate("/groups")}>
         ← Back to groups
       </button>
 
-      {/* HEADER */}
       <div style={styles.header}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <h2 style={styles.title}>Group #{id}</h2>
@@ -148,16 +185,16 @@ function GroupDetails() {
           <div style={styles.totalBox}>
             Total: ₱{totalAmount.toLocaleString()}
           </div>
-          <button style={styles.mainBtn} onClick={() => setShowModal(true)}>
-            + Add Member
-          </button>
+          {isCreator && (
+            <button style={styles.mainBtn} onClick={() => setShowModal(true)}>
+              + Add Member
+            </button>
+          )}
         </div>
       </div>
 
-      {/* GRID */}
       <div style={styles.grid}>
 
-        {/* MEMBERS CARD */}
         <div style={styles.card}>
           <div style={styles.cardHead}>
             <h3 style={styles.cardTitle}>Members</h3>
@@ -181,19 +218,20 @@ function GroupDetails() {
                     <div style={styles.memberEmail}>{m.user.email}</div>
                   )}
                 </div>
-                <button
-                  style={styles.removeBtn}
-                  onClick={() => handleRemoveMember(m.id)}
-                  title="Remove member"
-                >
-                  ✕
-                </button>
+                {isCreator && m.user?.id !== currentUserId && (
+                  <button
+                    style={styles.removeBtn}
+                    onClick={() => handleRemoveMember(m.id)}
+                    title="Remove member"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             ))
           )}
         </div>
 
-        {/* EXPENSES CARD */}
         <div style={styles.card}>
           <div style={styles.cardHead}>
             <h3 style={styles.cardTitle}>Shared Expenses</h3>
@@ -218,18 +256,19 @@ function GroupDetails() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <span style={styles.amount}>₱{exp.amount || 0}</span>
-                    <button
-                      style={styles.removeBtn}
-                      onClick={() => handleDeleteExpense(exp.id)}
-                      title="Delete expense"
-                    >
-                      🗑
-                    </button>
+                    {isCreator && (
+                      <button
+                        style={styles.removeBtn}
+                        onClick={() => handleDeleteExpense(exp.id)}
+                        title="Delete expense"
+                      >
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
 
-              {/* TOTAL ROW */}
               <div style={styles.totalRow}>
                 <span style={styles.totalLabel}>Total</span>
                 <span style={styles.totalAmount}>
@@ -242,7 +281,6 @@ function GroupDetails() {
 
       </div>
 
-      {/* ADD MEMBER MODAL */}
       {showModal && (
         <div style={styles.overlay}>
           <div style={styles.modal}>
@@ -295,7 +333,6 @@ function GroupDetails() {
         </div>
       )}
 
-      {/* ADD EXPENSE MODAL */}
       {showExpenseModal && (
         <div style={styles.overlay}>
           <div style={styles.modal}>
@@ -348,341 +385,74 @@ function GroupDetails() {
 export default GroupDetails;
 
 const styles = {
-  wrapper: {
-    padding: "24px",
-    background: "#f5f6fa",
-    minHeight: "100vh"
-  },
-
-  // ── BACK BUTTON ──
+  wrapper: { padding: "24px", background: "#f5f6fa", minHeight: "100vh" },
   backBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "7px 14px",
-    background: "white",
-    border: "1px solid #e0e0e0",
-    borderRadius: "8px",
-    fontSize: "13px",
-    color: "#555",
-    cursor: "pointer",
-    marginBottom: "20px",
-    fontWeight: "400"
+    display: "inline-flex", alignItems: "center", gap: "6px",
+    padding: "7px 14px", background: "white", border: "1px solid #e0e0e0",
+    borderRadius: "8px", fontSize: "13px", color: "#555", cursor: "pointer",
+    marginBottom: "20px", fontWeight: "400"
   },
-
-  // ── HEADER ──
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px"
-  },
-
-  title: {
-    fontSize: "22px",
-    fontWeight: "600",
-    color: "#16a085"
-  },
-
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" },
+  title: { fontSize: "22px", fontWeight: "600", color: "#16a085" },
   memberPill: {
-    fontSize: "12px",
-    color: "#085041",
-    background: "#E1F5EE",
-    padding: "3px 10px",
-    borderRadius: "20px",
-    fontWeight: "500",
-    border: "1px solid #9FE1CB"
+    fontSize: "12px", color: "#085041", background: "#E1F5EE",
+    padding: "3px 10px", borderRadius: "20px", fontWeight: "500", border: "1px solid #9FE1CB"
   },
-
   totalBox: {
-    background: "#E1F5EE",
-    color: "#085041",
-    padding: "7px 14px",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "500",
-    border: "1px solid #9FE1CB"
+    background: "#E1F5EE", color: "#085041", padding: "7px 14px",
+    borderRadius: "8px", fontSize: "14px", fontWeight: "500", border: "1px solid #9FE1CB"
   },
-
   mainBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    background: "#16a085",
-    color: "#fff",
-    padding: "9px 16px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "500"
+    display: "inline-flex", alignItems: "center", gap: "6px",
+    background: "#16a085", color: "#fff", padding: "9px 16px",
+    borderRadius: "8px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: "500"
   },
-
-  // ── GRID ──
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "16px"
-  },
-
-  // ── CARDS ──
+  grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" },
   card: {
-    background: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    border: "1px solid #efefef",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)"
+    background: "#fff", padding: "20px", borderRadius: "12px",
+    border: "1px solid #efefef", boxShadow: "0 1px 4px rgba(0,0,0,0.04)"
   },
-
   cardHead: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: "12px",
-    marginBottom: "4px",
-    borderBottom: "1px solid #f0f0f0"
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    paddingBottom: "12px", marginBottom: "4px", borderBottom: "1px solid #f0f0f0"
   },
-
-  cardTitle: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#333"
-  },
-
+  cardTitle: { fontSize: "15px", fontWeight: "600", color: "#333" },
   addBtn: {
-    background: "#16a085",
-    color: "#fff",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: "500"
+    background: "#16a085", color: "#fff", border: "none",
+    padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: "500"
   },
-
-  // ── MEMBERS ──
-  memberRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "11px 0",
-    borderBottom: "1px solid #f5f5f5"
-  },
-
+  memberRow: { display: "flex", alignItems: "center", gap: "10px", padding: "11px 0", borderBottom: "1px solid #f5f5f5" },
   avatar: {
-    width: "34px",
-    height: "34px",
-    borderRadius: "50%",
-    background: "#E1F5EE",
-    color: "#085041",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "13px",
-    fontWeight: "600",
-    flexShrink: 0
+    width: "34px", height: "34px", borderRadius: "50%", background: "#E1F5EE", color: "#085041",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: "13px", fontWeight: "600", flexShrink: 0
   },
-
-  memberName: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#333"
-  },
-
-  memberEmail: {
-    fontSize: "12px",
-    color: "#aaa",
-    marginTop: "1px"
-  },
-
+  memberName: { fontSize: "14px", fontWeight: "500", color: "#333" },
+  memberEmail: { fontSize: "12px", color: "#aaa", marginTop: "1px" },
   removeBtn: {
-    background: "#fff0f0",
-    color: "#c0392b",
-    border: "none",
-    width: "28px",
-    height: "28px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0
+    background: "#fff0f0", color: "#c0392b", border: "none",
+    width: "28px", height: "28px", borderRadius: "6px", cursor: "pointer",
+    fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
   },
-
-  // ── EXPENSES ──
-  expenseRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "11px 0",
-    borderBottom: "1px solid #f5f5f5"
-  },
-
-  expenseTitle: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#333"
-  },
-
-  expenseDate: {
-    fontSize: "11px",
-    color: "#bbb",
-    marginTop: "3px"
-  },
-
-  amount: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#16a085"
-  },
-
-  totalRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: "12px",
-    marginTop: "8px",
-    borderTop: "1px solid #e8e8e8"
-  },
-
-  totalLabel: {
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#555"
-  },
-
-  totalAmount: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: "#16a085"
-  },
-
-  empty: {
-    color: "#ccc",
-    fontSize: "13px",
-    padding: "10px 0"
-  },
-
-  // ── MODALS ──
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    background: "rgba(0,0,0,0.35)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000
-  },
-
-  modal: {
-    background: "#fff",
-    padding: "24px",
-    borderRadius: "14px",
-    width: "380px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.12)"
-  },
-
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-
-  modalTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#333"
-  },
-
-  closeBtn: {
-    background: "none",
-    border: "none",
-    fontSize: "16px",
-    color: "#aaa",
-    cursor: "pointer",
-    padding: "2px 6px",
-    borderRadius: "4px"
-  },
-
-  input: {
-    padding: "10px 12px",
-    borderRadius: "8px",
-    border: "1px solid #e0e0e0",
-    fontSize: "14px",
-    outline: "none",
-    width: "100%"
-  },
-
-  amountWrapper: {
-    display: "flex",
-    alignItems: "center",
-    border: "1px solid #e0e0e0",
-    borderRadius: "8px",
-    overflow: "hidden"
-  },
-
-  pesoSign: {
-    padding: "10px 12px",
-    background: "#f5f5f5",
-    color: "#555",
-    fontSize: "14px",
-    borderRight: "1px solid #e0e0e0"
-  },
-
-  amountInput: {
-    flex: 1,
-    padding: "10px 12px",
-    border: "none",
-    fontSize: "14px",
-    outline: "none"
-  },
-
-  foundCard: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "12px",
-    background: "#f9f9f9",
-    borderRadius: "8px",
-    border: "1px solid #eee"
-  },
-
-  confirmBtn: {
-    background: "#16a085",
-    color: "#fff",
-    border: "none",
-    padding: "6px 14px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "500"
-  },
-
-  primaryBtn: {
-    background: "#16a085",
-    color: "#fff",
-    padding: "10px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "500"
-  },
-
-  cancelBtn: {
-    background: "#f5f5f5",
-    color: "#666",
-    padding: "10px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "14px"
-  }
+  expenseRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f5f5f5" },
+  expenseTitle: { fontSize: "14px", fontWeight: "500", color: "#333" },
+  expenseDate: { fontSize: "11px", color: "#bbb", marginTop: "3px" },
+  amount: { fontSize: "14px", fontWeight: "600", color: "#16a085" },
+  totalRow: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "12px", marginTop: "8px", borderTop: "1px solid #e8e8e8" },
+  totalLabel: { fontSize: "13px", fontWeight: "600", color: "#555" },
+  totalAmount: { fontSize: "16px", fontWeight: "700", color: "#16a085" },
+  empty: { color: "#ccc", fontSize: "13px", padding: "10px 0" },
+  overlay: { position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.35)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 },
+  modal: { background: "#fff", padding: "24px", borderRadius: "14px", width: "380px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 8px 30px rgba(0,0,0,0.12)" },
+  modalHeader: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  modalTitle: { fontSize: "16px", fontWeight: "600", color: "#333" },
+  closeBtn: { background: "none", border: "none", fontSize: "16px", color: "#aaa", cursor: "pointer", padding: "2px 6px", borderRadius: "4px" },
+  input: { padding: "10px 12px", borderRadius: "8px", border: "1px solid #e0e0e0", fontSize: "14px", outline: "none", width: "100%" },
+  amountWrapper: { display: "flex", alignItems: "center", border: "1px solid #e0e0e0", borderRadius: "8px", overflow: "hidden" },
+  pesoSign: { padding: "10px 12px", background: "#f5f5f5", color: "#555", fontSize: "14px", borderRight: "1px solid #e0e0e0" },
+  amountInput: { flex: 1, padding: "10px 12px", border: "none", fontSize: "14px", outline: "none" },
+  foundCard: { display: "flex", alignItems: "center", gap: "10px", padding: "12px", background: "#f9f9f9", borderRadius: "8px", border: "1px solid #eee" },
+  confirmBtn: { background: "#16a085", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "500" },
+  primaryBtn: { background: "#16a085", color: "#fff", padding: "10px", borderRadius: "8px", border: "none", cursor: "pointer", fontSize: "14px", fontWeight: "500" },
+  cancelBtn: { background: "#f5f5f5", color: "#666", padding: "10px", borderRadius: "8px", border: "none", cursor: "pointer", fontSize: "14px" }
 };
