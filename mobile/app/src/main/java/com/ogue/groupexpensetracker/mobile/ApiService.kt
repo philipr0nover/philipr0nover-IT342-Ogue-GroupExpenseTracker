@@ -2,9 +2,11 @@ package com.ogue.groupexpensetracker.mobile
 
 import retrofit2.Call
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 // =====================
 // DATA MODELS
@@ -33,7 +35,6 @@ data class CreateGroupRequest(
     val createdBy: Long
 )
 
-// 🔥 NEW: Matches the payload structure your GroupMember entity expects
 data class AddMemberRequest(
     val groupId: Long,
     val userId: Long
@@ -62,6 +63,10 @@ interface ApiService {
     @POST("auth/login")
     fun login(@Body request: LoginRequest): Call<UserResponse>
 
+    // 🔍 SEARCH USER BY EMAIL
+    @GET("auth/users/search")
+    fun searchUserByEmail(@Query("email") email: String): Call<UserResponse>
+
     // 👥 GROUPS
     @GET("groups/user/{userId}")
     fun getGroups(@Path("userId") userId: Long): Call<List<Group>>
@@ -70,12 +75,18 @@ interface ApiService {
     @POST("groups")
     fun createGroup(@Body request: CreateGroupRequest): Call<Group>
 
-    // 👥 ADD GROUP MEMBER
-    // 🔥 NEW: Routes cleanly to your backend GroupMemberController mapping
+    // 👥 ADD GROUP MEMBER by userId
     @POST("group-members")
     fun addGroupMember(@Body request: AddMemberRequest): Call<AddMemberRequest>
 
-    // 👤 MEMBERS
+    // ❌ REMOVE MEMBER
+    @DELETE("group-members/{memberId}")
+    fun removeMember(
+        @Path("memberId") memberId: Long,
+        @Query("requesterId") requesterId: Long
+    ): Call<Void>
+
+    // 👤 GET MEMBERS OF GROUP
     @GET("group-members/{groupId}")
     fun getMembers(@Path("groupId") groupId: Long): Call<List<GroupMemberResponse>>
 

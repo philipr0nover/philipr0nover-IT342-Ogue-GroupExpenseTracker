@@ -23,14 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// ─── CRITICAL IMPORTS FIXED FOR M3 COMPILER ─────────────────────────────────
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-// ─── Brand Colors (Preserved) ───────────────────────────────────────────────
+// ─── Brand Colors ─────────────────────────────────────────────────────────────
 private val Green       = Color(0xFF26C69A)
 private val GreenDark   = Color(0xFF1BAB84)
 private val GreenLight  = Color(0xFFE3F8F2)
@@ -48,13 +47,12 @@ fun DashboardScreen(
     firstname: String,
     lastname: String,
     onAddExpense: (Long) -> Unit,
-    onCreateGroup: () -> Unit // 1. Added Create Group Navigation Callback
+    onCreateGroup: () -> Unit,
+    onGroupClick: (Long) -> Unit      // ← tapping a group card → GroupDetailScreen
 ) {
-    var groups   by remember { mutableStateOf<List<Group>>(emptyList()) }
-    var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+    var groups    by remember { mutableStateOf<List<Group>>(emptyList()) }
+    var expenses  by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-
-    // State to toggle expansion of the Floating Action Button options menu
     var isMenuExpanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -113,21 +111,19 @@ fun DashboardScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(GreenDark),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = firstname.take(1).uppercase(),
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
-                            }
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(GreenDark),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = firstname.take(1).uppercase(),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
                         }
                     }
                 }
@@ -152,7 +148,6 @@ fun DashboardScreen(
                         .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Total Expenses card
                     Card(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
@@ -160,11 +155,7 @@ fun DashboardScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                "Total Expenses",
-                                color = TextSecond,
-                                fontSize = 13.sp
-                            )
+                            Text("Total Expenses", color = TextSecond, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 "₱${"%.2f".format(totalExpenses)}",
@@ -174,8 +165,6 @@ fun DashboardScreen(
                             )
                         }
                     }
-
-                    // Groups card
                     Card(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
@@ -183,11 +172,7 @@ fun DashboardScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                "Groups",
-                                color = TextSecond,
-                                fontSize = 13.sp
-                            )
+                            Text("Groups", color = TextSecond, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 "${groups.size}",
@@ -201,7 +186,7 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // ── RECENT EXPENSES TABLE ────────────────────────────────────────
+            // ── RECENT EXPENSES TABLE ─────────────────────────────────────────
             item {
                 Card(
                     modifier = Modifier
@@ -212,7 +197,6 @@ fun DashboardScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Column {
-                        // Card header
                         Text(
                             text = "Recent Expenses",
                             fontWeight = FontWeight.SemiBold,
@@ -220,10 +204,7 @@ fun DashboardScreen(
                             color = TextPrimary,
                             modifier = Modifier.padding(16.dp)
                         )
-
                         HorizontalDivider(color = Divider)
-
-                        // Table header row
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -234,51 +215,28 @@ fun DashboardScreen(
                             Text("Title",  color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(2f))
                             Text("Amount", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         }
-
-                        // Table rows
                         if (isLoading) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
+                                modifier = Modifier.fillMaxWidth().padding(24.dp),
                                 contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = Green, strokeWidth = 2.dp)
-                            }
+                            ) { CircularProgressIndicator(color = Green, strokeWidth = 2.dp) }
                         } else if (expenses.isEmpty()) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
+                                modifier = Modifier.fillMaxWidth().padding(24.dp),
                                 contentAlignment = Alignment.Center
-                            ) {
-                                Text("No expenses yet", color = TextSecond, fontSize = 14.sp)
-                            }
+                            ) { Text("No expenses yet", color = TextSecond, fontSize = 14.sp) }
                         } else {
                             expenses.take(5).forEachIndexed { index, expense ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(
-                                            if (index % 2 == 0) Color.White else Color(0xFFF9FAFB)
-                                        )
+                                        .background(if (index % 2 == 0) Color.White else Color(0xFFF9FAFB))
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        expense.description,
-                                        color = TextPrimary,
-                                        fontSize = 14.sp,
-                                        modifier = Modifier.weight(2f)
-                                    )
-                                    Text(
-                                        "₱${"%.2f".format(expense.amount)}",
-                                        color = AmountGreen,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 14.sp,
-                                        modifier = Modifier.weight(1f)
-                                    )
+                                    Text(expense.description, color = TextPrimary, fontSize = 14.sp, modifier = Modifier.weight(2f))
+                                    Text("₱${"%.2f".format(expense.amount)}", color = AmountGreen, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.weight(1f))
                                 }
                                 if (index < minOf(expenses.size, 5) - 1) {
                                     HorizontalDivider(color = Divider, thickness = 0.5.dp)
@@ -291,7 +249,7 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            // ── YOUR GROUPS ──────────────────────────────────────────────────
+            // ── YOUR GROUPS ───────────────────────────────────────────────────
             item {
                 Text(
                     text = "Your Groups",
@@ -312,11 +270,7 @@ fun DashboardScreen(
                 }
             } else if (groups.isEmpty()) {
                 item {
-                    Text(
-                        "No groups found",
-                        color = TextSecond,
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
+                    Text("No groups found", color = TextSecond, modifier = Modifier.padding(horizontal = 20.dp))
                 }
             } else {
                 items(groups) { group ->
@@ -324,7 +278,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 5.dp)
-                            .clickable { onAddExpense(group.id) },
+                            .clickable { onGroupClick(group.id) },  // ← goes to GroupDetailScreen
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBg),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -335,7 +289,6 @@ fun DashboardScreen(
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Green circle avatar
                             Box(
                                 modifier = Modifier
                                     .size(42.dp)
@@ -350,24 +303,11 @@ fun DashboardScreen(
                                     fontSize = 18.sp
                                 )
                             }
-
                             Spacer(modifier = Modifier.width(14.dp))
-
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    group.name,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp,
-                                    color = TextPrimary
-                                )
-                                Text(
-                                    "${group.members} members",
-                                    color = TextSecond,
-                                    fontSize = 13.sp
-                                )
+                                Text(group.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextPrimary)
+                                Text("${group.members} members", color = TextSecond, fontSize = 13.sp)
                             }
-
-                            // Arrow indicator
                             Text("›", color = TextSecond, fontSize = 22.sp)
                         }
                     }
@@ -375,7 +315,7 @@ fun DashboardScreen(
             }
         }
 
-        // ── EXPANDABLE SPEED DIAL FAB MENU ───────────────────────────────
+        // ── EXPANDABLE SPEED DIAL FAB ─────────────────────────────────────────
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -383,7 +323,6 @@ fun DashboardScreen(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Sub-Menu Actions
             AnimatedVisibility(visible = isMenuExpanded) {
                 Column(
                     horizontalAlignment = Alignment.End,
@@ -407,7 +346,6 @@ fun DashboardScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
-                        // COMPILER FIX: Use SmallFloatingActionButton instead of parameter size modification
                         SmallFloatingActionButton(
                             onClick = {
                                 isMenuExpanded = false
@@ -417,10 +355,7 @@ fun DashboardScreen(
                             contentColor = Color.White,
                             shape = CircleShape
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Create Group"
-                            )
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Create Group")
                         }
                     }
 
@@ -442,7 +377,6 @@ fun DashboardScreen(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
-                        // COMPILER FIX: Use SmallFloatingActionButton instead of parameter size modification
                         SmallFloatingActionButton(
                             onClick = {
                                 isMenuExpanded = false
@@ -456,19 +390,17 @@ fun DashboardScreen(
                             contentColor = Color.White,
                             shape = CircleShape
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Expense"
-                            )
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Add Expense")
                         }
                     }
                 }
             }
 
-            // Smooth rotation calculation for the main FAB icon transformation (+ to x)
-            val rotationAngle by animateFloatAsState(targetValue = if (isMenuExpanded) 45f else 0f, label = "fabRotation")
+            val rotationAngle by animateFloatAsState(
+                targetValue = if (isMenuExpanded) 45f else 0f,
+                label = "fabRotation"
+            )
 
-            // Primary Main Action Trigger FAB
             FloatingActionButton(
                 onClick = { isMenuExpanded = !isMenuExpanded },
                 containerColor = Green,

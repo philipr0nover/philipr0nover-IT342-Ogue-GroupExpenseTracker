@@ -3,15 +3,9 @@ package com.ogue.groupexpensetracker.mobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
-
-// ─── Screen Destinations Enums ──────────────────────────────────────────────
-enum class Screen {
-    LOGIN,
-    DASHBOARD,
-    ADD_EXPENSE,
-    CREATE_GROUP
-}
+import com.ogue.groupexpensetracker.mobile.ui.theme.GroupExpenseMobileTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -19,57 +13,68 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            var currentScreen by remember { mutableStateOf(Screen.LOGIN) }
-            var user by remember { mutableStateOf<UserResponse?>(null) }
-            var selectedGroupId by remember { mutableStateOf<Long?>(null) }
+            GroupExpenseMobileTheme {
+                Surface {
+                    var user            by remember { mutableStateOf<UserResponse?>(null) }
+                    var selectedGroupId by remember { mutableStateOf<Long?>(null) }
+                    var viewingGroupId  by remember { mutableStateOf<Long?>(null) }
+                    var isCreatingGroup by remember { mutableStateOf(false) }
 
-            when (currentScreen) {
-                Screen.LOGIN -> {
-                    // 🔐 LOGIN SCREEN
-                    LoginScreen(
-                        onLoginSuccess = { loggedInUser ->
-                            user = loggedInUser
-                            currentScreen = Screen.DASHBOARD
-                        }
-                    )
-                }
+                    when {
 
-                Screen.DASHBOARD -> {
-                    // 🏠 DASHBOARD SCREEN
-                    DashboardScreen(
-                        userId = user!!.id,
-                        firstname = user!!.firstname,
-                        lastname = user!!.lastname,
-                        onAddExpense = { groupId ->
-                            selectedGroupId = groupId
-                            currentScreen = Screen.ADD_EXPENSE
-                        },
-                        onCreateGroup = {
-                            currentScreen = Screen.CREATE_GROUP
+                        // 🔐 LOGIN
+                        user == null -> {
+                            LoginScreen(
+                                onLoginSuccess = { loggedInUser ->
+                                    user = loggedInUser
+                                }
+                            )
                         }
-                    )
-                }
 
-                Screen.ADD_EXPENSE -> {
-                    // 💸 ADD EXPENSE SCREEN
-                    AddExpenseScreen(
-                        groupId = selectedGroupId!!,
-                        userId = user!!.id,
-                        onBack = {
-                            selectedGroupId = null
-                            currentScreen = Screen.DASHBOARD
+                        // 💸 ADD EXPENSE standalone screen
+                        selectedGroupId != null -> {
+                            AddExpenseScreen(
+                                groupId = selectedGroupId!!,
+                                userId  = user!!.id,
+                                onBack  = { selectedGroupId = null }
+                            )
                         }
-                    )
-                }
 
-                Screen.CREATE_GROUP -> {
-                    // 👥 CREATE GROUP SCREEN (🔥 NEW NAVIGATION STATE ROUTE)
-                    CreateGroupScreen(
-                        userId = user!!.id,
-                        onBack = {
-                            currentScreen = Screen.DASHBOARD
+                        // 🔍 GROUP DETAIL
+                        viewingGroupId != null -> {
+                            GroupDetailScreen(
+                                groupId = viewingGroupId!!,
+                                userId  = user!!.id,
+                                onBack  = { viewingGroupId = null }
+                            )
                         }
-                    )
+
+                        // ➕ CREATE GROUP
+                        isCreatingGroup -> {
+                            CreateGroupScreen(
+                                userId = user!!.id,
+                                onBack = { isCreatingGroup = false }
+                            )
+                        }
+
+                        // 🏠 DASHBOARD
+                        else -> {
+                            DashboardScreen(
+                                userId        = user!!.id,
+                                firstname     = user!!.firstname,
+                                lastname      = user!!.lastname,
+                                onAddExpense  = { groupId ->
+                                    selectedGroupId = groupId
+                                },
+                                onCreateGroup = {
+                                    isCreatingGroup = true
+                                },
+                                onGroupClick  = { groupId ->
+                                    viewingGroupId = groupId
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
