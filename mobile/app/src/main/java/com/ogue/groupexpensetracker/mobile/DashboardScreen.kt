@@ -1,6 +1,8 @@
 package com.ogue.groupexpensetracker.mobile
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,21 +17,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+// ─── CRITICAL IMPORTS FIXED FOR M3 COMPILER ─────────────────────────────────
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-// ─── Brand Colors (Updated to match your web app concept exactly) ───────────
-private val Green       = Color(0xFF26C69A) // Main concept green theme
-private val GreenDark   = Color(0xFF1BAB84) // Balanced darker tone for header contrast
-private val GreenLight  = Color(0xFFE3F8F2) // Clean mint tint background for group avatars
-private val GreenText   = Color(0xFF0E5C47) // Readable contrast color text for the light green badges
-private val Background  = Color(0xFFF1F4F9) // Concept off-white app background
+// ─── Brand Colors (Preserved) ───────────────────────────────────────────────
+private val Green       = Color(0xFF26C69A)
+private val GreenDark   = Color(0xFF1BAB84)
+private val GreenLight  = Color(0xFFE3F8F2)
+private val GreenText   = Color(0xFF0E5C47)
+private val Background  = Color(0xFFF1F4F9)
 private val CardBg      = Color(0xFFFFFFFF)
 private val TextPrimary = Color(0xFF111827)
 private val TextSecond  = Color(0xFF6B7280)
@@ -41,11 +47,15 @@ fun DashboardScreen(
     userId: Long,
     firstname: String,
     lastname: String,
-    onAddExpense: (Long) -> Unit
+    onAddExpense: (Long) -> Unit,
+    onCreateGroup: () -> Unit // 1. Added Create Group Navigation Callback
 ) {
     var groups   by remember { mutableStateOf<List<Group>>(emptyList()) }
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+
+    // State to toggle expansion of the Floating Action Button options menu
+    var isMenuExpanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val api     = remember { ApiClient.retrofit.create(ApiService::class.java) }
@@ -365,23 +375,112 @@ fun DashboardScreen(
             }
         }
 
-        // ── FAB ─────────────────────────────────────────────────────────────
-        FloatingActionButton(
-            onClick = {
-                if (groups.isNotEmpty()) {
-                    onAddExpense(groups.first().id)
-                } else {
-                    Toast.makeText(context, "No groups available", Toast.LENGTH_SHORT).show()
-                }
-            },
+        // ── EXPANDABLE SPEED DIAL FAB MENU ───────────────────────────────
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp),
-            containerColor = Green,
-            contentColor = Color.White,
-            shape = CircleShape
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Expense")
+            // Sub-Menu Actions
+            AnimatedVisibility(visible = isMenuExpanded) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Option A: Create Group
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = CardBg),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "Create Group",
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                        // COMPILER FIX: Use SmallFloatingActionButton instead of parameter size modification
+                        SmallFloatingActionButton(
+                            onClick = {
+                                isMenuExpanded = false
+                                onCreateGroup()
+                            },
+                            containerColor = GreenDark,
+                            contentColor = Color.White,
+                            shape = CircleShape
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Create Group"
+                            )
+                        }
+                    }
+
+                    // Option B: Add Expense
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = CardBg),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "Add Expense",
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                        // COMPILER FIX: Use SmallFloatingActionButton instead of parameter size modification
+                        SmallFloatingActionButton(
+                            onClick = {
+                                isMenuExpanded = false
+                                if (groups.isNotEmpty()) {
+                                    onAddExpense(groups.first().id)
+                                } else {
+                                    Toast.makeText(context, "No groups available", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            containerColor = GreenDark,
+                            contentColor = Color.White,
+                            shape = CircleShape
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Expense"
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Smooth rotation calculation for the main FAB icon transformation (+ to x)
+            val rotationAngle by animateFloatAsState(targetValue = if (isMenuExpanded) 45f else 0f, label = "fabRotation")
+
+            // Primary Main Action Trigger FAB
+            FloatingActionButton(
+                onClick = { isMenuExpanded = !isMenuExpanded },
+                containerColor = Green,
+                contentColor = Color.White,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Open Actions Menu",
+                    modifier = Modifier.rotate(rotationAngle)
+                )
+            }
         }
     }
 }
