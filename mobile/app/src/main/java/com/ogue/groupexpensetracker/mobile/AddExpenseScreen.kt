@@ -1,14 +1,39 @@
 package com.ogue.groupexpensetracker.mobile
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
+// ─── Brand Colors (same as DashboardScreen) ───────────────────────────────────
+private val Green       = Color(0xFF10B981)
+private val GreenDark   = Color(0xFF059669)
+private val GreenLight  = Color(0xFFD1FAE5)
+private val GreenText   = Color(0xFF065F46)
+private val Background  = Color(0xFFF9FAFB)
+private val CardBg      = Color(0xFFFFFFFF)
+private val TextPrimary = Color(0xFF111827)
+private val TextSecond  = Color(0xFF6B7280)
+private val Divider     = Color(0xFFE5E7EB)
+private val ErrorRed    = Color(0xFFEF4444)
 
 @Composable
 fun AddExpenseScreen(
@@ -16,83 +41,239 @@ fun AddExpenseScreen(
     userId: Long,
     onBack: () -> Unit
 ) {
-
     var description by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
+    var amount      by remember { mutableStateOf("") }
+    var isLoading   by remember { mutableStateOf(false) }
+    var descError   by remember { mutableStateOf(false) }
+    var amountError by remember { mutableStateOf(false) }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    val api     = remember { ApiClient.retrofit.create(ApiService::class.java) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .background(Background)
     ) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
-        Text("Add Expense", style = MaterialTheme.typography.headlineMedium)
+            // ── TOP BAR ──────────────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Green)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(GreenDark)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
-        Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
-        OutlinedTextField(
-            value = description,
-            onValueChange = { description = it },
-            label = { Text("Description") },
-            modifier = Modifier.fillMaxWidth()
-        )
+                    Text(
+                        text = "Add Expense",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            // ── FORM CARD ─────────────────────────────────────────────────────
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Amount") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick = {
-
-                val api = ApiClient.retrofit.create(ApiService::class.java)
-
-                val expense = Expense(
-                    description = description,
-                    amount = amount.toDoubleOrNull() ?: 0.0,
-                    groupId = groupId,
-                    paidBy = userId
+                // Subtitle
+                Text(
+                    text = "Fill in the details below to record a new expense.",
+                    color = TextSecond,
+                    fontSize = 14.sp
                 )
 
-                api.addExpense(expense).enqueue(object : Callback<Expense> {
-
-                    override fun onResponse(
-                        call: Call<Expense>,
-                        response: Response<Expense>
-                    ) {
-                        if (response.isSuccessful) {
-                            Toast.makeText(context, "Expense added", Toast.LENGTH_SHORT).show()
-                            onBack()
-                        } else {
-                            Toast.makeText(context, "Failed to add expense", Toast.LENGTH_SHORT).show()
-                        }
+                // ── Description Field ────────────────────────────────────────
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Description",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = {
+                                description = it
+                                descError = false
+                            },
+                            placeholder = { Text("e.g. Dinner, Groceries...", color = TextSecond) },
+                            isError = descError,
+                            supportingText = if (descError) {
+                                { Text("Description is required", color = ErrorRed, fontSize = 12.sp) }
+                            } else null,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Green,
+                                unfocusedBorderColor = Divider,
+                                focusedLabelColor = Green,
+                                cursorColor = Green
+                            ),
+                            singleLine = true
+                        )
                     }
+                }
 
-                    override fun onFailure(call: Call<Expense>, t: Throwable) {
-                        Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                // ── Amount Field ─────────────────────────────────────────────
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBg),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Amount (₱)",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = amount,
+                            onValueChange = {
+                                amount = it
+                                amountError = false
+                            },
+                            placeholder = { Text("0.00", color = TextSecond) },
+                            isError = amountError,
+                            supportingText = if (amountError) {
+                                { Text("Enter a valid amount", color = ErrorRed, fontSize = 12.sp) }
+                            } else null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Green,
+                                unfocusedBorderColor = Divider,
+                                focusedLabelColor = Green,
+                                cursorColor = Green
+                            ),
+                            singleLine = true,
+                            prefix = { Text("₱ ", color = Green, fontWeight = FontWeight.SemiBold) }
+                        )
                     }
-                })
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Add Expense")
-        }
+                }
 
-        Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-        Button(
-            onClick = { onBack() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Back")
+                // ── Submit Button ────────────────────────────────────────────
+                Button(
+                    onClick = {
+                        // Validate
+                        descError   = description.isBlank()
+                        amountError = amount.toDoubleOrNull() == null || amount.toDoubleOrNull()!! <= 0
+
+                        if (descError || amountError) return@Button
+
+                        isLoading = true
+
+                        val expense = Expense(
+                            description = description.trim(),
+                            amount      = amount.toDouble(),
+                            groupId     = groupId,
+                            paidBy      = userId
+                        )
+
+                        api.addExpense(expense).enqueue(object : Callback<Expense> {
+                            override fun onResponse(
+                                call: Call<Expense>,
+                                response: Response<Expense>
+                            ) {
+                                isLoading = false
+                                if (response.isSuccessful) {
+                                    Toast.makeText(context, "Expense added!", Toast.LENGTH_SHORT).show()
+                                    onBack()
+                                } else {
+                                    Toast.makeText(context, "Failed to add expense", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
+                            override fun onFailure(call: Call<Expense>, t: Throwable) {
+                                isLoading = false
+                                Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Green,
+                        disabledContainerColor = GreenLight
+                    ),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text(
+                            "Add Expense",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                // ── Cancel Button ────────────────────────────────────────────
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Green),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        // reuse default border width
+                    )
+                ) {
+                    Text(
+                        "Cancel",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Green
+                    )
+                }
+            }
         }
     }
 }
