@@ -306,7 +306,6 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.width(14.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(group.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextPrimary)
-                                Text("${group.members} members", color = TextSecond, fontSize = 13.sp)
                             }
                             Text("›", color = TextSecond, fontSize = 22.sp)
                         }
