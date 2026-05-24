@@ -17,39 +17,57 @@ import retrofit2.Response
 fun DashboardScreen(
     userId: Long,
     firstname: String,
-    lastname: String
+    lastname: String,
+    onAddExpense: (Long) -> Unit
 ) {
 
     var groups by remember { mutableStateOf<List<Group>>(emptyList()) }
+    var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
+
     var isLoading by remember { mutableStateOf(true) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val api = ApiClient.retrofit.create(ApiService::class.java)
 
+    // 🔥 LOAD DATA
     LaunchedEffect(Unit) {
 
-        val api = ApiClient.retrofit.create(ApiService::class.java)
-
         api.getGroups(userId).enqueue(object : Callback<List<Group>> {
-
             override fun onResponse(
                 call: Call<List<Group>>,
                 response: Response<List<Group>>
             ) {
-                isLoading = false
-
                 if (response.isSuccessful) {
                     groups = response.body() ?: emptyList()
-                } else {
-                    Toast.makeText(context, "Failed to load groups", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<List<Group>>, t: Throwable) {
+                Toast.makeText(context, "Groups error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        api.getUserExpenses(userId).enqueue(object : Callback<List<Expense>> {
+            override fun onResponse(
+                call: Call<List<Expense>>,
+                response: Response<List<Expense>>
+            ) {
                 isLoading = false
-                Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+
+                if (response.isSuccessful) {
+                    expenses = response.body() ?: emptyList()
+                }
+            }
+
+            override fun onFailure(call: Call<List<Expense>>, t: Throwable) {
+                isLoading = false
+                Toast.makeText(context, "Expenses error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
+
+    val totalExpenses = expenses.sumOf { it.amount }
+    val groupCount = groups.size
 
     Column(
         modifier = Modifier
@@ -57,13 +75,84 @@ fun DashboardScreen(
             .padding(20.dp)
     ) {
 
+        // 🔥 HEADER
         Text(
             text = "Welcome $firstname $lastname",
             style = MaterialTheme.typography.headlineMedium
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🔥 ADD EXPENSE BUTTON (VISIBLE NOW)
+        Button(
+            onClick = {
+                if (groups.isNotEmpty()) {
+                    onAddExpense(groups.first().id)
+                } else {
+                    Toast.makeText(context, "No groups available", Toast.LENGTH_SHORT).show()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Add Expense")
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
+        // 🔥 STATS
+        Row(modifier = Modifier.fillMaxWidth()) {
+
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 6.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Total Expenses")
+                    Text("₱${"%.2f".format(totalExpenses)}")
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 6.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Groups")
+                    Text("$groupCount")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // 🔥 RECENT EXPENSES
+        Text("Recent Expenses", style = MaterialTheme.typography.titleMedium)
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        if (expenses.isEmpty()) {
+            Text("No expenses yet")
+        } else {
+            LazyColumn {
+                items(expenses.take(5)) { expense ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(expense.description)
+                        Text("₱${"%.2f".format(expense.amount)}")
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // 🔥 GROUPS
         Text("Your Groups", style = MaterialTheme.typography.titleMedium)
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -75,6 +164,7 @@ fun DashboardScreen(
         } else {
 
             LazyColumn {
+
                 items(groups) { group ->
 
                     Card(
@@ -82,11 +172,7 @@ fun DashboardScreen(
                             .fillMaxWidth()
                             .padding(vertical = 6.dp)
                             .clickable {
-                                Toast.makeText(
-                                    context,
-                                    "Clicked ${group.name}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                onAddExpense(group.id) // 🔥 CLICK GROUP
                             }
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {

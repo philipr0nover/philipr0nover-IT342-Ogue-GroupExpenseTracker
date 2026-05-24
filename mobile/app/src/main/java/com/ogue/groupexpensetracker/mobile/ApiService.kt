@@ -33,10 +33,13 @@ data class GroupMemberResponse(
     val user: UserResponse
 )
 
+// ✅ MATCH BACKEND
 data class Expense(
-    val id: Long,
-    val title: String,
-    val amount: Double
+    val id: Long? = null,
+    val description: String,
+    val amount: Double,
+    val groupId: Long,
+    val paidBy: Long
 )
 
 // =====================
@@ -45,19 +48,27 @@ data class Expense(
 
 interface ApiService {
 
-    // LOGIN
+    // 🔐 LOGIN
     @POST("auth/login")
     fun login(@Body request: LoginRequest): Call<UserResponse>
 
-    // ✅ FIXED: GROUPS BY USER
+    // 👥 GROUPS
     @GET("groups/user/{userId}")
     fun getGroups(@Path("userId") userId: Long): Call<List<Group>>
 
-    // MEMBERS
+    // 👤 MEMBERS
     @GET("group-members/{groupId}")
     fun getMembers(@Path("groupId") groupId: Long): Call<List<GroupMemberResponse>>
 
-    // EXPENSES
-    @GET("expenses/{groupId}")
+    // 💸 EXPENSES BY GROUP
+    @GET("expenses/group/{groupId}")
     fun getExpenses(@Path("groupId") groupId: Long): Call<List<Expense>>
+
+    // 💸 EXPENSES BY USER (🔥 NEEDED FOR DASHBOARD)
+    @GET("expenses/user/{userId}")
+    fun getUserExpenses(@Path("userId") userId: Long): Call<List<Expense>>
+
+    // ➕ ADD EXPENSE
+    @POST("expenses")
+    fun addExpense(@Body expense: Expense): Call<Expense>
 }

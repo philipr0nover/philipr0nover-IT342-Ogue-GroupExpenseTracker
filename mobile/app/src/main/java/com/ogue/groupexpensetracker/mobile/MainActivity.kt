@@ -13,22 +13,45 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             var user by remember { mutableStateOf<UserResponse?>(null) }
+            var selectedGroupId by remember { mutableStateOf<Long?>(null) }
 
-            if (user == null) {
+            when {
+                user == null -> {
 
-                LoginScreen(
-                    onLoginSuccess = { loggedInUser ->
-                        user = loggedInUser
-                    }
-                )
+                    // 🔐 LOGIN
+                    LoginScreen(
+                        onLoginSuccess = { loggedInUser ->
+                            user = loggedInUser
+                        }
+                    )
+                }
 
-            } else {
+                selectedGroupId != null -> {
 
-                DashboardScreen(
-                    userId = user!!.id,   // ✅ FIX
-                    firstname = user!!.firstname,
-                    lastname = user!!.lastname
-                )
+                    // 💸 ADD EXPENSE
+                    AddExpenseScreen(
+                        groupId = selectedGroupId!!,
+                        userId = user!!.id,
+                        onBack = {
+                            selectedGroupId = null
+                        }
+                    )
+                }
+
+                else -> {
+
+                    // 🏠 DASHBOARD
+                    DashboardScreen(
+                        userId = user!!.id,
+                        firstname = user!!.firstname,
+                        lastname = user!!.lastname,
+
+                        // 🔥 IMPORTANT (you were missing behavior control)
+                        onAddExpense = { groupId ->
+                            selectedGroupId = groupId
+                        }
+                    )
+                }
             }
         }
     }
