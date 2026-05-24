@@ -23,12 +23,11 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-// ─── Brand Colors (same as DashboardScreen) ───────────────────────────────────
-private val Green       = Color(0xFF10B981)
-private val GreenDark   = Color(0xFF059669)
-private val GreenLight  = Color(0xFFD1FAE5)
-private val GreenText   = Color(0xFF065F46)
-private val Background  = Color(0xFFF9FAFB)
+// ─── Brand Colors (Updated to match the login concept theme) ────────────────
+private val Green       = Color(0xFF26C69A) // Main concept green theme
+private val GreenDark   = Color(0xFF1BAB84) // Balanced darker tone for header contrast
+private val GreenLight  = Color(0xFFE3F8F2) // Clean mint tint background
+private val Background  = Color(0xFFF1F4F9) // Concept off-white app background
 private val CardBg      = Color(0xFFFFFFFF)
 private val TextPrimary = Color(0xFF111827)
 private val TextSecond  = Color(0xFF6B7280)
@@ -262,9 +261,7 @@ fun AddExpenseScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Green),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        // reuse default border width
-                    )
+                    border = ButtonDefaults.outlinedButtonBorder
                 ) {
                     Text(
                         "Cancel",

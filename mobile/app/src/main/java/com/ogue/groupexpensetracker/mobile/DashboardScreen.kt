@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,17 +24,17 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-// ─── Brand Colors (matching web dashboard) ───────────────────────────────────
-private val Green       = Color(0xFF10B981)
-private val GreenDark   = Color(0xFF059669)
-private val GreenLight  = Color(0xFFD1FAE5)
-private val GreenText   = Color(0xFF065F46)
-private val Background  = Color(0xFFF9FAFB)
+// ─── Brand Colors (Updated to match your web app concept exactly) ───────────
+private val Green       = Color(0xFF26C69A) // Main concept green theme
+private val GreenDark   = Color(0xFF1BAB84) // Balanced darker tone for header contrast
+private val GreenLight  = Color(0xFFE3F8F2) // Clean mint tint background for group avatars
+private val GreenText   = Color(0xFF0E5C47) // Readable contrast color text for the light green badges
+private val Background  = Color(0xFFF1F4F9) // Concept off-white app background
 private val CardBg      = Color(0xFFFFFFFF)
 private val TextPrimary = Color(0xFF111827)
 private val TextSecond  = Color(0xFF6B7280)
 private val Divider     = Color(0xFFE5E7EB)
-private val AmountGreen = Color(0xFF10B981)
+private val AmountGreen = Color(0xFF26C69A)
 
 @Composable
 fun DashboardScreen(
