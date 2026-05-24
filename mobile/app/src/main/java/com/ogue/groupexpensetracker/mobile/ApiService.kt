@@ -28,12 +28,22 @@ data class Group(
     val members: Int
 )
 
+data class CreateGroupRequest(
+    val name: String,
+    val createdBy: Long
+)
+
+// 🔥 NEW: Matches the payload structure your GroupMember entity expects
+data class AddMemberRequest(
+    val groupId: Long,
+    val userId: Long
+)
+
 data class GroupMemberResponse(
     val id: Long,
     val user: UserResponse
 )
 
-// ✅ MATCH BACKEND
 data class Expense(
     val id: Long? = null,
     val description: String,
@@ -56,6 +66,15 @@ interface ApiService {
     @GET("groups/user/{userId}")
     fun getGroups(@Path("userId") userId: Long): Call<List<Group>>
 
+    // ➕ CREATE GROUP
+    @POST("groups")
+    fun createGroup(@Body request: CreateGroupRequest): Call<Group>
+
+    // 👥 ADD GROUP MEMBER
+    // 🔥 NEW: Routes cleanly to your backend GroupMemberController mapping
+    @POST("group-members")
+    fun addGroupMember(@Body request: AddMemberRequest): Call<AddMemberRequest>
+
     // 👤 MEMBERS
     @GET("group-members/{groupId}")
     fun getMembers(@Path("groupId") groupId: Long): Call<List<GroupMemberResponse>>
@@ -64,7 +83,7 @@ interface ApiService {
     @GET("expenses/group/{groupId}")
     fun getExpenses(@Path("groupId") groupId: Long): Call<List<Expense>>
 
-    // 💸 EXPENSES BY USER (🔥 NEEDED FOR DASHBOARD)
+    // 💸 EXPENSES BY USER
     @GET("expenses/user/{userId}")
     fun getUserExpenses(@Path("userId") userId: Long): Call<List<Expense>>
 
