@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = "http://localhost:8080/api/v1/group-members";
+const API = "https://groupexpensetracker-backend.onrender.com/api/v1/group-members";
 
 // ✅ ADD MEMBER (SAFE)
 export const addMember = async (data) => {

@@ -29,7 +29,7 @@ function Dashboard() {
 
       // EXPENSES — check res.ok before parsing
       const expenseRes = await fetch(
-        `http://localhost:8080/api/v1/expenses/user/${user.id}`
+        `https://groupexpensetracker-backend.onrender.com/api/v1/expenses/user/${user.id}`
       );
       if (!expenseRes.ok) throw new Error(`Expenses failed: ${expenseRes.status}`);
       const expenseData = await expenseRes.json();
@@ -44,7 +44,7 @@ function Dashboard() {
 
       // GROUPS — check res.ok before parsing
       const groupRes = await fetch(
-        `http://localhost:8080/api/v1/groups/user/${user.id}`
+       `https://groupexpensetracker-backend.onrender.com/api/v1/groups/user/${user.id}`
       );
       if (!groupRes.ok) throw new Error(`Groups failed: ${groupRes.status}`);
       const groupData = await groupRes.json();

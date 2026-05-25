@@ -4,6 +4,8 @@ import axios from "axios";
 import { addMember, getMembers } from "../../services/groupMemberService";
 import { getExpensesByGroup, addExpense } from "../../services/expenseService";
 
+const BASE_URL = "https://groupexpensetracker-backend.onrender.com/api/v1";
+
 function GroupDetails() {
 
   const { id } = useParams();
@@ -27,7 +29,6 @@ function GroupDetails() {
 
   const totalAmount = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // ✅ FIX: force both to Number so "1" === 1 doesn't fail the comparison
   const isCreator = currentUserId !== null &&
                     groupCreatorId !== null &&
                     Number(currentUserId) === Number(groupCreatorId);
@@ -46,9 +47,8 @@ function GroupDetails() {
 
     const loadData = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/api/v1/groups/${id}`);
+        const res = await axios.get(`${BASE_URL}/groups/${id}`);
         if (isMounted) {
-          // ✅ FIX: log what we get so you can see the values in console
           console.log("[GroupDetails] group data:", res.data);
           console.log("[GroupDetails] createdBy:", res.data?.createdBy);
           if (res.data?.createdBy != null) {
@@ -90,7 +90,7 @@ function GroupDetails() {
     if (!email.trim()) return;
     try {
       const res = await axios.get(
-        `http://localhost:8080/api/v1/auth/users/search?email=${email.trim()}`
+        `${BASE_URL}/auth/users/search?email=${email.trim()}`
       );
       setFoundUser(res.data || null);
     } catch {
@@ -112,11 +112,12 @@ function GroupDetails() {
     }
   };
 
+  // ✅ FIXED: was calling expenses URL instead of group-members
   const handleRemoveMember = async (memberId) => {
     if (!currentUserId) { alert("Session expired. Please log in again."); return; }
     try {
       await axios.delete(
-        `http://localhost:8080/api/v1/group-members/${memberId}?requesterId=${currentUserId}`
+        `${BASE_URL}/group-members/${memberId}?requesterId=${currentUserId}`
       );
       setMembers(prev => prev.filter(m => m.id !== memberId));
     } catch (err) {
@@ -155,7 +156,7 @@ function GroupDetails() {
     if (!currentUserId) { alert("Session expired. Please log in again."); return; }
     try {
       await axios.delete(
-        `http://localhost:8080/api/v1/expenses/${expenseId}?requesterId=${currentUserId}`
+        `${BASE_URL}/expenses/${expenseId}?requesterId=${currentUserId}`
       );
       setExpenses(prev => prev.filter(e => e.id !== expenseId));
     } catch (err) {

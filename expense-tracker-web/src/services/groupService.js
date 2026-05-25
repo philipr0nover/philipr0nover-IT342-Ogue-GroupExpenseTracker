@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API = "http://localhost:8080/api/v1/groups";
+const API = "https://groupexpensetracker-backend.onrender.com/api/v1/groups";
 
 // GET GROUPS BY USER
 export const getGroups = async (userId) => {

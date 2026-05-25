@@ -37,7 +37,7 @@ export default function ExpenseTable({ expenses: propExpenses, loading: propLoad
         }
 
         const res = await axios.get(
-          `http://localhost:8080/api/v1/expenses/user/${user.id}`
+           `https://groupexpensetracker-backend.onrender.com/api/v1/expenses/user/${user.id}`
         );
 
         if (!isMounted) return;
