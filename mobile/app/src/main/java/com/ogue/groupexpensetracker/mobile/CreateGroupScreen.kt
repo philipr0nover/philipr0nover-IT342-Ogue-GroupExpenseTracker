@@ -42,7 +42,7 @@ fun CreateGroupScreen(
     var nameError by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val api     = remember { ApiClient.retrofit.create(ApiService::class.java) }
+    val api     = remember { `ApiClient`.retrofit.create(ApiService::class.java) }
 
     Box(
         modifier = Modifier
