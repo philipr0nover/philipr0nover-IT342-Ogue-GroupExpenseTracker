@@ -57,13 +57,9 @@ fun GroupDetailScreen(
     var showAddMember  by remember { mutableStateOf(false) }
     var showAddExpense by remember { mutableStateOf(false) }
 
-    // ── Loaders ───────────────────────────────────────────────────────────────
     fun loadMembers() {
         api.getMembers(groupId).enqueue(object : Callback<List<GroupMemberResponse>> {
-            override fun onResponse(
-                call: Call<List<GroupMemberResponse>>,
-                response: Response<List<GroupMemberResponse>>
-            ) {
+            override fun onResponse(call: Call<List<GroupMemberResponse>>, response: Response<List<GroupMemberResponse>>) {
                 if (response.isSuccessful) members = response.body() ?: emptyList()
             }
             override fun onFailure(call: Call<List<GroupMemberResponse>>, t: Throwable) {
@@ -87,11 +83,7 @@ fun GroupDetailScreen(
         api.getGroups(userId).enqueue(object : Callback<List<Group>> {
             override fun onResponse(call: Call<List<Group>>, response: Response<List<Group>>) {
                 if (response.isSuccessful) {
-                    val found = response.body()?.find { it.id == groupId }
-                    group = found
-                    // ✅ Check creator: Group.createdBy matches userId
-                    // We use the members list first member heuristic if no createdBy field
-                    // Will finalize after members load
+                    group = response.body()?.find { it.id == groupId }
                 }
                 isLoading = false
             }
@@ -103,9 +95,6 @@ fun GroupDetailScreen(
         loadExpenses()
     }
 
-    // ✅ Derive isCreator once members are loaded:
-    // The creator is the FIRST member added (lowest id) — matches CreateGroupScreen flow
-    // where creator is immediately added as first member after group creation
     LaunchedEffect(members) {
         if (members.isNotEmpty()) {
             val firstMember = members.minByOrNull { it.id }
@@ -115,7 +104,6 @@ fun GroupDetailScreen(
 
     val totalExpenses = expenses.sumOf { it.amount }
 
-    // ── Dialogs ───────────────────────────────────────────────────────────────
     if (showAddMember) {
         AddMemberDialog(
             groupId   = groupId,
@@ -143,7 +131,6 @@ fun GroupDetailScreen(
         )
     }
 
-    // ── UI ────────────────────────────────────────────────────────────────────
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -182,8 +169,7 @@ fun GroupDetailScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = if (isLoading) "Group Details"
-                            else group?.name ?: "Group Details",
+                            text = if (isLoading) "Group Details" else group?.name ?: "Group Details",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
@@ -196,9 +182,7 @@ fun GroupDetailScreen(
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = CardBg),
                     elevation = CardDefaults.cardElevation(1.dp)
@@ -208,41 +192,22 @@ fun GroupDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(GreenLight),
+                            modifier = Modifier.size(56.dp).clip(CircleShape).background(GreenLight),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = (group?.name?.take(1) ?: "G").uppercase(),
-                                color = GreenText,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp
+                                color = GreenText, fontWeight = FontWeight.Bold, fontSize = 24.sp
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
-                            Text(
-                                group?.name ?: "Loading...",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = TextPrimary
-                            )
+                            Text(group?.name ?: "Loading...", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "${members.size} members  •  ${expenses.size} expenses",
-                                color = TextSecond,
-                                fontSize = 13.sp
-                            )
+                            Text("${members.size} members  •  ${expenses.size} expenses", color = TextSecond, fontSize = 13.sp)
                             if (isCreator) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    "You are the creator",
-                                    color = Green,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                Text("You are the creator", color = Green, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }
@@ -253,43 +218,23 @@ fun GroupDetailScreen(
             // ── STATS ROW ─────────────────────────────────────────────────────
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBg),
-                        elevation = CardDefaults.cardElevation(1.dp)
-                    ) {
+                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Total Expenses", color = TextSecond, fontSize = 12.sp)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "₱${"%.2f".format(totalExpenses)}",
-                                color = Green,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
+                            Text("₱${"%.2f".format(totalExpenses)}", color = Green, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                     }
-                    Card(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBg),
-                        elevation = CardDefaults.cardElevation(1.dp)
-                    ) {
+                    Card(modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBg), elevation = CardDefaults.cardElevation(1.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Members", color = TextSecond, fontSize = 12.sp)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "${members.size}",
-                                color = TextPrimary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            )
+                            Text("${members.size}", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                     }
                 }
@@ -299,34 +244,16 @@ fun GroupDetailScreen(
             // ── MEMBERS HEADER ────────────────────────────────────────────────
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "Members",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = TextPrimary
-                    )
-                    // ✅ Only creator sees Add Member button
+                    Text("Members", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = TextPrimary)
                     if (isCreator) {
                         TextButton(onClick = { showAddMember = true }) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Green,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Default.Add, contentDescription = null, tint = Green, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "Add Member",
-                                color = Green,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Text("Add Member", color = Green, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -336,86 +263,50 @@ fun GroupDetailScreen(
             // ── MEMBERS LIST ──────────────────────────────────────────────────
             if (members.isEmpty()) {
                 item {
-                    Text(
-                        "No members yet",
-                        color = TextSecond,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 20.dp)
-                    )
+                    Text("No members yet", color = TextSecond, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 20.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             } else {
                 items(members) { member ->
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(containerColor = CardBg),
                         elevation = CardDefaults.cardElevation(1.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(GreenLight),
+                                modifier = Modifier.size(38.dp).clip(CircleShape).background(GreenLight),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = member.user.firstname.take(1).uppercase(),
-                                    color = GreenText,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
+                                Text(member.user.firstname.take(1).uppercase(), color = GreenText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "${member.user.firstname} ${member.user.lastname}",
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 14.sp,
-                                    color = TextPrimary
-                                )
+                                Text("${member.user.firstname} ${member.user.lastname}", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextPrimary)
                                 Text(member.user.email, color = TextSecond, fontSize = 12.sp)
                             }
-                            // ✅ Only creator sees Delete button
-                            // ✅ Cannot delete yourself (the creator)
                             if (isCreator && member.user.id != userId) {
                                 IconButton(
                                     onClick = {
-                                        api.removeMember(member.id, userId)
-                                            .enqueue(object : Callback<Void> {
-                                                override fun onResponse(
-                                                    call: Call<Void>,
-                                                    response: Response<Void>
-                                                ) {
-                                                    when (response.code()) {
-                                                        204 -> {
-                                                            loadMembers()
-                                                            Toast.makeText(context, "Member removed", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                        403 -> Toast.makeText(context, "Only the group creator can remove members", Toast.LENGTH_SHORT).show()
-                                                        else -> Toast.makeText(context, "Failed to remove member", Toast.LENGTH_SHORT).show()
-                                                    }
+                                        api.removeMember(member.id, userId).enqueue(object : Callback<Void> {
+                                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                                when (response.code()) {
+                                                    204 -> { loadMembers(); Toast.makeText(context, "Member removed", Toast.LENGTH_SHORT).show() }
+                                                    403 -> Toast.makeText(context, "Only the group creator can remove members", Toast.LENGTH_SHORT).show()
+                                                    else -> Toast.makeText(context, "Failed to remove member", Toast.LENGTH_SHORT).show()
                                                 }
-                                                override fun onFailure(call: Call<Void>, t: Throwable) {
-                                                    Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                                                }
-                                            })
+                                            }
+                                            override fun onFailure(call: Call<Void>, t: Throwable) {
+                                                Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                            }
+                                        })
                                     }
                                 ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Remove",
-                                        tint = ErrorRed,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    Icon(Icons.Default.Delete, contentDescription = "Remove", tint = ErrorRed, modifier = Modifier.size(18.dp))
                                 }
                             }
                         }
@@ -427,32 +318,15 @@ fun GroupDetailScreen(
             // ── EXPENSES HEADER ───────────────────────────────────────────────
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "Expenses",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = TextPrimary
-                    )
+                    Text("Expenses", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = TextPrimary)
                     TextButton(onClick = { showAddExpense = true }) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            tint = Green,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Icon(Icons.Default.Add, contentDescription = null, tint = Green, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            "Add Expense",
-                            color = Green,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Text("Add Expense", color = Green, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -461,39 +335,31 @@ fun GroupDetailScreen(
             // ── EXPENSES TABLE ────────────────────────────────────────────────
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = CardBg),
                     elevation = CardDefaults.cardElevation(1.dp)
                 ) {
                     Column {
+                        // ✅ Paid By column removed
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Green)
+                            modifier = Modifier.fillMaxWidth().background(Green)
                                 .padding(horizontal = 16.dp, vertical = 10.dp)
                         ) {
-                            Text("Title",   color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(2f))
-                            Text("Amount",  color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                            Text("Paid By", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                            Text("Title",  color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(2f))
+                            Text("Amount", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
                         }
                         if (isLoading) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                contentAlignment = Alignment.Center
-                            ) { CircularProgressIndicator(color = Green, strokeWidth = 2.dp) }
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Green, strokeWidth = 2.dp)
+                            }
                         } else if (expenses.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                contentAlignment = Alignment.Center
-                            ) { Text("No expenses yet", color = TextSecond, fontSize = 14.sp) }
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Text("No expenses yet", color = TextSecond, fontSize = 14.sp)
+                            }
                         } else {
                             expenses.forEachIndexed { index, expense ->
-                                val paidByName = members
-                                    .find { it.user.id == expense.paidBy }
-                                    ?.user?.firstname ?: "User ${expense.paidBy}"
+                                // ✅ paidByName removed
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -503,7 +369,6 @@ fun GroupDetailScreen(
                                 ) {
                                     Text(expense.description, color = TextPrimary, fontSize = 13.sp, modifier = Modifier.weight(2f))
                                     Text("₱${"%.2f".format(expense.amount)}", color = Green, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                                    Text(paidByName, color = TextSecond, fontSize = 12.sp, modifier = Modifier.weight(1f))
                                 }
                                 if (index < expenses.size - 1) {
                                     HorizontalDivider(color = DividerCol, thickness = 0.5.dp)
@@ -520,7 +385,6 @@ fun GroupDetailScreen(
 }
 
 // ─── Add Member Dialog ────────────────────────────────────────────────────────
-// ✅ 2-step: search user by email → then add by userId (no backend changes)
 @Composable
 fun AddMemberDialog(
     groupId: Long,
@@ -540,18 +404,9 @@ fun AddMemberDialog(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    "Add Member",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = TextPrimary
-                )
+                Text("Add Member", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    "Enter the email of the user to add.",
-                    color = TextSecond,
-                    fontSize = 13.sp
-                )
+                Text("Enter the email of the user to add.", color = TextSecond, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
@@ -591,58 +446,32 @@ fun AddMemberDialog(
                                 return@Button
                             }
                             isLoading = true
-
-                            // ── Step 1: Find user by email ────────────────────
-                            api.searchUserByEmail(email.trim())
-                                .enqueue(object : Callback<UserResponse> {
-                                    override fun onResponse(
-                                        call: Call<UserResponse>,
-                                        response: Response<UserResponse>
-                                    ) {
-                                        if (!response.isSuccessful || response.body() == null) {
-                                            isLoading = false
-                                            Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
-                                            return
-                                        }
-
-                                        val foundUser = response.body()!!
-
-                                        // ── Step 2: Add member by userId ──────
-                                        val request = AddMemberRequest(
-                                            groupId = groupId,
-                                            userId  = foundUser.id
-                                        )
-                                        api.addGroupMember(request)
-                                            .enqueue(object : Callback<AddMemberRequest> {
-                                                override fun onResponse(
-                                                    call: Call<AddMemberRequest>,
-                                                    response: Response<AddMemberRequest>
-                                                ) {
-                                                    isLoading = false
-                                                    if (response.isSuccessful) {
-                                                        onSuccess()
-                                                    } else {
-                                                        Toast.makeText(context, "User already a member", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                                override fun onFailure(
-                                                    call: Call<AddMemberRequest>,
-                                                    t: Throwable
-                                                ) {
-                                                    isLoading = false
-                                                    Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                                                }
-                                            })
-                                    }
-
-                                    override fun onFailure(
-                                        call: Call<UserResponse>,
-                                        t: Throwable
-                                    ) {
+                            api.searchUserByEmail(email.trim()).enqueue(object : Callback<UserResponse> {
+                                override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
+                                    if (!response.isSuccessful || response.body() == null) {
                                         isLoading = false
-                                        Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
+                                        return
                                     }
-                                })
+                                    val foundUser = response.body()!!
+                                    val request = AddMemberRequest(groupId = groupId, userId = foundUser.id)
+                                    api.addGroupMember(request).enqueue(object : Callback<AddMemberRequest> {
+                                        override fun onResponse(call: Call<AddMemberRequest>, response: Response<AddMemberRequest>) {
+                                            isLoading = false
+                                            if (response.isSuccessful) onSuccess()
+                                            else Toast.makeText(context, "User already a member", Toast.LENGTH_SHORT).show()
+                                        }
+                                        override fun onFailure(call: Call<AddMemberRequest>, t: Throwable) {
+                                            isLoading = false
+                                            Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    })
+                                }
+                                override fun onFailure(call: Call<UserResponse>, t: Throwable) {
+                                    isLoading = false
+                                    Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            })
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
@@ -650,11 +479,7 @@ fun AddMemberDialog(
                         enabled = !isLoading
                     ) {
                         if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
                         } else {
                             Text("Add", color = Color.White)
                         }
@@ -688,18 +513,9 @@ fun AddExpenseDialog(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    "Add Expense",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = TextPrimary
-                )
+                Text("Add Expense", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    "Record a new expense for this group.",
-                    color = TextSecond,
-                    fontSize = 13.sp
-                )
+                Text("Record a new expense for this group.", color = TextSecond, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
@@ -767,10 +583,7 @@ fun AddExpenseDialog(
                                 paidBy      = userId
                             )
                             api.addExpense(expense).enqueue(object : Callback<Expense> {
-                                override fun onResponse(
-                                    call: Call<Expense>,
-                                    response: Response<Expense>
-                                ) {
+                                override fun onResponse(call: Call<Expense>, response: Response<Expense>) {
                                     isLoading = false
                                     if (response.isSuccessful) onSuccess()
                                     else Toast.makeText(context, "Failed to add expense", Toast.LENGTH_SHORT).show()
@@ -787,11 +600,7 @@ fun AddExpenseDialog(
                         enabled = !isLoading
                     ) {
                         if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
                         } else {
                             Text("Add", color = Color.White)
                         }
